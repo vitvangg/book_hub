@@ -1,8 +1,14 @@
+import { Stack, CircularProgress } from "@mui/material";
+
 function Loading() {
   return (
-    <div className="flex justify-center items-center h-full">
-      <div className="loader ease-linear rounded-full border-8 border-t-8 border-gray-200 h-16 w-16"></div>
-    </div>
+    <Stack flexDirection="row" justifyContent="center" alignItems="center" bgcolor={"white"}
+      width={"100%"}
+      height={"100%"}
+      minHeight={"50vh"}
+      >
+      <CircularProgress sx={{ color: "#1db954" }} />
+    </Stack>
   );
 }
 export default Loading;
