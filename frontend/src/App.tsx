@@ -6,16 +6,22 @@ import Home from './pages/protected/Home'
 import Error from './pages/Error'
 import Register from './pages/Register'
 import Login from './pages/Login'
+import ProtectedLayout from './pages/protected/ProtectedLayout'
+import "./index.css"
 
 function App() {
   return (
     <BrowserRouter >
-        {/* <Header /> */}
       <Routes>
-        <Route path="/" element={<Home />} />
-        <Route path="/*" element={<Error />} />
+        {/* Public routes */}
+        <Route path="/login" element={<Login />} />
         <Route path='/sign-up' element={<Register />} />
-        <Route path='/login' element={<Login />} />
+
+        {/* Protected routes */}
+        <Route element={<ProtectedLayout />}> 
+          <Route path="/" element={<Home />} />
+          <Route path="/*" element={<Error />} />
+        </Route>
       </Routes>
     </BrowserRouter>
   )

@@ -22,11 +22,9 @@ function Header() {
           <Box sx={{ borderRadius: "100%", bgcolor: "#282828", width: 48, height: 48, display: "flex", justifyContent: "center", alignItems: "center", p: 0 }}>
             <GoHomeFill style={{ color: "white", fontSize: 30 }} />
           </Box>
-        </Stack>
-        { /* Center - Search */ }
-        <Stack>
           <Search />
         </Stack>
+        { /* Center - Search */ }
         { /* Right - Auth */ }
         <Stack>
           <Navbar />
