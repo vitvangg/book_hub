@@ -1,6 +1,14 @@
-import { Box, Button, Typography } from "@mui/material";
+import { Box, Button } from "@mui/material";
+import { useNavigate } from "react-router-dom";
 
 function Navbar() {
+  const navigate = useNavigate();
+  function handleLoginClick() {
+    navigate("/login");
+  }
+  function handleSignUpClick() {
+    navigate("/sign-up");
+  }
   return (
     <Box
       sx={{
@@ -31,6 +39,7 @@ function Navbar() {
             transform: "scale(0.95)", // thu nhỏ 5% khi bấm
           },
         }}
+        onClick={handleSignUpClick}
       >
         Sign Up
       </Button>
@@ -52,6 +61,7 @@ function Navbar() {
             transform: "scale(0.95)", // thu nhỏ 5% khi bấm
           },
         }}
+        onClick={handleLoginClick}
       >
         Login
       </Button>

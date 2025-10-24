@@ -2,32 +2,14 @@ import { Tabs, Tab, Box, Stack, Pagination } from "@mui/material";
 import PostCard from "../common/PostCard";
 import { useSearchParams } from "react-router-dom";
 
-export default function TabsSection() {
+export default function TabsProfile() {
   const [searchParams, setSearchParams] = useSearchParams();
 
-  const tabs = [
-    "Dành cho bạn",
-    "Theo tác giả",
-    "Mới nhất",
-    "Sôi nổi",
-    "Đánh giá cao nhất",
-  ];
-  const tabMap = {
-    "for-you": 0,
-    "by-author": 1,
-    latest: 2,
-    trending: 3,
-    "top-rated": 4,
-  };
-  const reverseTabMap = {
-    0: "for-you",
-    1: "by-author",
-    2: "latest",
-    3: "trending",
-    4: "top-rated",
-  };
+  const tabs = ["Posts"];
+  const tabMap = { post: 0 };
+  const reverseTabMap = { 0: "post" };
 
-  // Đọc từ URL, mặc định tab 0 và page 1
+  // Đọc từ URL, mặc định tab 0 (Article) và page 1
   const currentTab =
     tabMap[searchParams.get("type") as keyof typeof tabMap] ?? 0;
   const currentPage = parseInt(searchParams.get("page") || "1");

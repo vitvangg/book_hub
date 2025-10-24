@@ -1,9 +1,11 @@
-import { Box, CardMedia, Stack } from "@mui/material";
-import TrendingContent from "./TrendingContent";  // phần bài viết nổi bật
-import TabsSection from "./TabsSection";  // phần tabs: Dành cho bạn, Mới nhất,...
+import { Box, CardMedia, Stack, Typography } from "@mui/material";
+import TabsSearch from "./TabsSearch";
+import { useSearchParams } from "react-router-dom";
 
-export default function Content() {
-
+export default function SearchContent() {
+  const [searchParams] = useSearchParams();
+  const searchTerm = searchParams.get('q') || '';
+  
   return (
     <Box
       sx={{
@@ -34,21 +36,17 @@ export default function Content() {
           },
         }}
       >
-        {/* --- Bài viết nổi bật trong tháng --- */}
-          <TrendingContent />
+        {/* --- Noi dung tim kiem --- */}
+        <Stack>
+          <Typography variant="h6" fontWeight={600} color="white" mb={1}>
+            Result for "{searchTerm}"
+          </Typography>
+        </Stack>
 
         {/* --- Phần Tabs: Dành cho bạn, Mới nhất,... --- */}
         <Stack direction={"row"} spacing={2}>
           <Box sx={{ flex: 8}}>
-            <TabsSection />
-          </Box>
-          <Box sx={{ flex: 4 }}>
-            <CardMedia
-              component="img"
-              image="./poster.jpg"
-              alt="Placeholder"
-              sx={{ borderRadius: 2 }}
-            />
+            <TabsSearch />
           </Box>
         </Stack>
       </Box>

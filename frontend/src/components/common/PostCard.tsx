@@ -44,7 +44,7 @@ export default function PostCard({
           borderRadius: 2,
           overflow: "hidden",
           boxShadow: 1,
-          bgcolor: "background.paper",
+          bgcolor: "	#212121",
         "&:hover": {
           bgcolor: "#535353",
           cursor: "pointer",
@@ -66,13 +66,14 @@ export default function PostCard({
       <CardContent
         sx={{
           flex: 1,
+          color: "white",
           p: 2,
           display: "flex",
           flexDirection: "column",
           justifyContent: "center",
         }}
       >
-        <Typography variant="caption" color="text.secondary" sx={{ mb: 0.5 }}>
+        <Typography variant="caption" sx={{ mb: 0.5 }}>
           KHOA HỌC - CÔNG NGHỆ • {readTime}
         </Typography>
 
@@ -94,7 +95,6 @@ export default function PostCard({
 
         <Typography
           variant="body2"
-          color="text.secondary"
           sx={{
             display: "-webkit-box",
             WebkitBoxOrient: "vertical",
@@ -112,7 +112,7 @@ export default function PostCard({
             <Typography variant="body2" fontWeight={500}>
               {author}
             </Typography>
-            <Typography variant="body2" color="text.secondary">
+            <Typography variant="body2">
               • {time}
             </Typography>
           </Stack>
@@ -121,14 +121,14 @@ export default function PostCard({
           { layout === "row" && (
           <Stack direction="row" alignItems="center" spacing={1.5}>
             <Stack direction="row" alignItems="center" spacing={0.5}>
-              <FavoriteBorderIcon sx={{ fontSize: 18, color: "text.secondary" }} />
-              <Typography variant="body2" color="text.secondary">
+              <FavoriteBorderIcon sx={{ fontSize: 18, color: "white" }} />
+              <Typography variant="body2">
                 {likes}
               </Typography>
             </Stack>
             <Stack direction="row" alignItems="center" spacing={0.5}>
-              <ChatBubbleOutlineIcon sx={{ fontSize: 18, color: "text.secondary" }} />
-              <Typography variant="body2" color="text.secondary">
+              <ChatBubbleOutlineIcon sx={{ fontSize: 18, color: "white" }} />
+              <Typography variant="body2">
                 {comments}
               </Typography>
             </Stack>

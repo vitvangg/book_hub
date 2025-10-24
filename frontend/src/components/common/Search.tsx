@@ -1,10 +1,30 @@
-import { Box, TextField } from "@mui/material"
+import { Box, InputBase } from "@mui/material"
 import { BsSearch } from "react-icons/bs"
 import { useState } from "react"
+import { useNavigate } from "react-router-dom"
 
 function Search() {
+  const navigate = useNavigate();
+  const [searchValue, setSearchValue] = useState("")
   const [showInput, setShowInput] = useState(false)
 
+  function handleSearchClick() {
+    if (searchValue.trim()) {
+      const searchParams = new URLSearchParams({
+        q: searchValue.trim(),
+        type: 'post', // hoặc 'book', 'user', etc.
+        page: '1',
+        sort: 'relevance' // thêm sort mặc định
+      });
+      navigate(`/search?${searchParams.toString()}`);
+    }
+  }
+
+  function handleKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
+    if (e.key === "Enter") {
+      handleSearchClick();
+    }
+  }
   return (
     <Box
       sx={{
@@ -52,22 +72,16 @@ function Search() {
       </Box>
 
       {showInput && (
-        <TextField
+        <InputBase
+          onChange={(e) => setSearchValue(e.target.value)}
+          onKeyDown={handleKeyDown}
           placeholder="What do you want to find?"
-          variant="outlined"
-          fullWidth
           autoFocus
           sx={{
             flex: 9,
-            py: 2,
-            input: {
-              color: "white",
-              padding: "10px 0",
-            },
-            "& .MuiOutlinedInput-root": {
-              bgcolor: "transparent",
-              "& fieldset": { border: "none" },
-            },
+            px: 2,
+            color: "white",
+            "& input": { padding: "10px 0" },
           }}
         />
       )}

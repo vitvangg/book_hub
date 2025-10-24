@@ -1,42 +1,21 @@
+import { useState } from "react";
 import { Tabs, Tab, Box, Stack, Pagination } from "@mui/material";
 import PostCard from "../common/PostCard";
-import { useSearchParams } from "react-router-dom";
 
-export default function TabsSection() {
-  const [searchParams, setSearchParams] = useSearchParams();
+interface TabsTopicProps {
+  topic: string;
+}
 
-  const tabs = [
-    "Dành cho bạn",
-    "Theo tác giả",
-    "Mới nhất",
-    "Sôi nổi",
-    "Đánh giá cao nhất",
-  ];
-  const tabMap = {
-    "for-you": 0,
-    "by-author": 1,
-    latest: 2,
-    trending: 3,
-    "top-rated": 4,
-  };
-  const reverseTabMap = {
-    0: "for-you",
-    1: "by-author",
-    2: "latest",
-    3: "trending",
-    4: "top-rated",
-  };
+export default function TabsTopic({ topic }: TabsTopicProps) {
+  const [tab, setTab] = useState(0);
+  const [page, setPage] = useState(1);
 
-  // Đọc từ URL, mặc định tab 0 và page 1
-  const currentTab =
-    tabMap[searchParams.get("type") as keyof typeof tabMap] ?? 0;
-  const currentPage = parseInt(searchParams.get("page") || "1");
+  const tabs = ["Trending", "New", "Top"];
 
   // Mỗi tab có 15 bài giả để test
   const allPosts = tabs.map((name) =>
     [...Array(15)].map((_, i) => ({
-      image:
-        "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQ-jIuSd4hlWSUD0PXmPRCmiA5uFq2HOMrpKQ&s",
+      image: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQ-jIuSd4hlWSUD0PXmPRCmiA5uFq2HOMrpKQ&s",
       title: `${name} - Bài viết ${i + 1}`,
       description: "Mô tả ngắn về bài viết...",
       author: "IamSuSu",
@@ -49,30 +28,35 @@ export default function TabsSection() {
 
   // Phân trang: mỗi trang 5 bài
   const postsPerPage = 5;
-  const start = (currentPage - 1) * postsPerPage;
+  const start = (page - 1) * postsPerPage;
   const end = start + postsPerPage;
-  const currentPosts = allPosts[currentTab].slice(start, end);
+  const currentPosts = allPosts[tab].slice(start, end);
 
   interface TabChangeEvent extends React.SyntheticEvent<Element, Event> {}
 
-  const handleTabChange = (_e: TabChangeEvent, newVal: number) => {
-    const params = new URLSearchParams(searchParams);
-    params.set("type", reverseTabMap[newVal as keyof typeof reverseTabMap]);
-    params.set("page", "1"); // reset về trang 1 khi đổi tab
-    setSearchParams(params);
+  interface Post {
+    image: string;
+    title: string;
+    description: string;
+    author: string;
+    time: string;
+    readTime: string;
+    likes: number;
+    comments: number;
+  }
+  const handleTabChange = (e: TabChangeEvent, newVal: number) => {
+    setTab(newVal);
+    setPage(1); // reset về trang 1 khi đổi tab
   };
-
   const handlePageChange = (_e: React.ChangeEvent<unknown>, value: number) => {
-    const params = new URLSearchParams(searchParams);
-    params.set("page", value.toString());
-    setSearchParams(params);
+    setPage(value);
   };
 
   return (
     <Box>
       {/* --- Thanh Tabs --- */}
       <Tabs
-        value={currentTab}
+        value={tab}
         onChange={handleTabChange}
         variant="scrollable"
         scrollButtons="auto"
@@ -109,21 +93,21 @@ export default function TabsSection() {
         {/* --- Phân trang --- */}
         <Stack alignItems="center" mt={3}>
           <Pagination
-            count={Math.ceil(allPosts[currentTab].length / postsPerPage)} // tổng số trang
-            page={currentPage}
+            count={Math.ceil(allPosts[tab].length / postsPerPage)} // tổng số trang
+            page={page}
             onChange={handlePageChange}
+            color="primary"
             size="large"
             siblingCount={1}
             boundaryCount={1}
-            sx={{
-              color: "white",
-              "& .MuiPaginationItem-root": {
-                color: "white", // 🎨 màu chữ
+             sx={{
+              "& .MuiPaginationItem-root": {  
+                color: "white",           // 🎨 màu chữ
                 "&:hover": {
-                  bgcolor: "#1db954", // 🎨 màu khi hover
+                  bgcolor: "#1db954",     // 🎨 màu khi hover
                 },
                 "&.Mui-selected": {
-                  bgcolor: "white", // 🎨 màu nút đang chọn
+                  bgcolor: "white",     // 🎨 màu nút đang chọn
                   color: "#121212", // 🎨 màu chữ nút đang chọn
                 },
               },
