@@ -3,14 +3,22 @@ import { Box,
         Typography, 
         TextField, 
         Button } from "@mui/material";
-import { useState } from "react";
+import { useState, } from "react";
+import { useLoginMutation } from "../redux/service";
+import { useNavigate } from "react-router-dom";
+import { toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 
 function Login() {
+
+    const [loginUser] = useLoginMutation();
+
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [errors, setErrors] = useState({ email: "", password: "" });
 
+    const navigate = useNavigate();
     const validateForm = () => {
         const newErrors = { email: "", password: "" };
         let isValid = true;
@@ -26,22 +34,27 @@ function Login() {
         if (!password.trim()) {
             newErrors.password = "Vui lòng nhập mật khẩu";
             isValid = false;
-        } else if (password.length < 6) {
-            newErrors.password = "Mật khẩu phải có ít nhất 6 ký tự";
-            isValid = false;
-        }
+        } 
 
         setErrors(newErrors);
         return isValid;
     }
 
-    const handleLogin = () => {
-        if (validateForm()) {
-            console.log("Login data:", { email, password, timestamp: new Date().toLocaleString() });
-            // TODO: Kết nối backend ở đây
+    const handleLogin = async () => {
+    if (validateForm()) {
+        const data = { email, password };
+        try {
+            await loginUser(data).unwrap(); // ✅ dùng unwrap
+            toast.success("Login successful!");
+            setTimeout(() => {
+              navigate("/home");
+            }, 500);
+
+        } catch (error) {
+            toast.error("Login failed. Please check your credentials.");
         }
     }
-
+    };
     return <Box  sx={{
                     width: "100%",
                     height: "100vh", 

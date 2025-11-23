@@ -3,15 +3,24 @@ import { Box,
         Typography, 
         TextField, 
         Button } from "@mui/material";
-import { useState } from "react";
+import { use, useEffect, useState } from "react";
+import { useSignupMutation } from "../redux/service";
+import { data, useNavigate } from "react-router-dom";
+import { toast } from "react-toastify";
 
 function Register() {
-    const [email, setEmail] = useState("");
-    const [password, setPassword] = useState("");
-    const [errors, setErrors] = useState({ email: "", password: "" });
 
+    const [signUpUser, signUpUserData] = useSignupMutation();
+
+    const [email, setEmail] = useState("");
+    const [username, setUsername] = useState("");
+    const [password, setPassword] = useState("");
+    const [errors, setErrors] = useState({ email: "", username: "", password: "" });
+
+    const navigate = useNavigate();
+    
     const validateForm = () => {
-        const newErrors = { email: "", password: "" };
+        const newErrors = { email: "", username: "", password: "" };
         let isValid = true;
 
         if (!email.trim()) {
@@ -22,11 +31,16 @@ function Register() {
             isValid = false;
         }
 
+        if (!username.trim()) {
+            newErrors.username = "Vui lòng nhập tên người dùng";
+            isValid = false;
+        }
+
         if (!password.trim()) {
             newErrors.password = "Vui lòng nhập mật khẩu";
             isValid = false;
-        } else if (password.length < 6) {
-            newErrors.password = "Mật khẩu phải có ít nhất 6 ký tự";
+        } else if (password.length > 20) {
+            newErrors.password = "Mật khẩu không được vượt quá 20 ký tự";
             isValid = false;
         }
 
@@ -34,10 +48,19 @@ function Register() {
         return isValid;
     }
 
-    const handleRegister = () => {
+    const handleRegister = async () => {
+        let data = {};
+        try {
         if (validateForm()) {
-            console.log("Register data:", { email, password, timestamp: new Date().toLocaleString() });
-            // TODO: Kết nối backend ở đây
+            data = { email, name: username, password };
+            await signUpUser(data).unwrap(); // ✅ dùng unwrap
+            toast.success("Registration successful!");
+            setTimeout(() => {
+              navigate("/home");
+            }, 500);
+        }
+        } catch (error) {
+            toast.error("Registration failed. Please try again.");
         }
     }
 
@@ -131,6 +154,56 @@ function Register() {
                     {errors.email && (
                         <Typography variant="caption" sx={{ color: "#ff4444", fontSize: "12px" }}>
                             {errors.email}
+                        </Typography>
+                    )}
+                    </Stack>
+                                        <Stack spacing={1}>
+                        { /* Email */ }
+                    <Typography
+                    variant="h5"
+                        sx={{
+                            color: "white",
+                            fontWeight: 700,
+                            fontSize: "13px",
+                            textAlign: "left",
+                            lineHeight: 1.2,
+                        }}>
+                    Enter username
+                    </Typography>
+                    <TextField
+                    error={!!errors.username}
+                    placeholder="username"
+                    variant="outlined"
+                    fullWidth
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
+                    sx={{
+                        height: "3rem",
+                        bgcolor: "black",
+                        borderRadius: "4px",
+                        "& .MuiOutlinedInput-root": {
+                        bgcolor: "transparent",
+                        border: "1px solid #535353",
+                        borderRadius: "4px",
+                        transition: "all 0.3s ease-in-out",
+
+                        "&:hover": {
+                            borderColor: "white", // hover đổi màu viền
+                        },
+                        "&.Mui-focused": {
+                            borderColor: "white", // khi focus đổi sang trắng
+                        },
+                        "& fieldset": { border: "none" }, // bỏ border mặc định
+                        input: {
+                            color: "white",
+                            padding: "10px 12px",
+                        },
+                        },
+                    }}
+                    />
+                    {errors.username && (
+                        <Typography variant="caption" sx={{ color: "#ff4444", fontSize: "12px" }}>
+                            {errors.username}
                         </Typography>
                     )}
                     </Stack>

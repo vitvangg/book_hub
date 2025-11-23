@@ -1,10 +1,13 @@
-import { useRef } from "react";
+import { use, useEffect, useRef } from "react";
 import PostCard from "../common/PostCard";
 import { Stack, Typography, Box, IconButton } from "@mui/material";
 import { ChevronLeft, ChevronRight } from "@mui/icons-material";
+import { useListTrending30Query } from "../../redux/service";
+import { useNavigate } from "react-router-dom";
 
 function TrendingContent() {
   const scrollRef = useRef<HTMLDivElement>(null);
+  const navigate = useNavigate();
 
   const scroll = (direction: "left" | "right") => {
     if (scrollRef.current) {
@@ -12,6 +15,19 @@ function TrendingContent() {
       scrollRef.current.scrollBy({ left: scrollAmount, behavior: "smooth" });
     }
   };
+
+  const { data: trendingPosts, isLoading, isError } = useListTrending30Query();
+  const currentPosts = trendingPosts?.posts || [];
+
+  const handlePostClick = (postID: number) => {
+    navigate(`/post/${postID}`);
+  };
+
+  useEffect(() => {
+    if (isError) {
+      console.error("Error fetching trending posts");
+    }
+  }, []);
 
   return (
     <Stack position="relative" >
@@ -51,18 +67,18 @@ function TrendingContent() {
           "&::-webkit-scrollbar": { display: "none" }, // Chrome, Safari, Opera
         }}
       >
-        {[...Array(10)].map((_, i) => (
-          <Box key={i} sx={{ flex: "0 0 auto", scrollSnapAlign: "start" }}>
+        {currentPosts.map((post: any, index: number) => (
+          <Box key={index} sx={{ flex: "0 0 auto", scrollSnapAlign: "start"}}>
             <PostCard
+              title={post.title}
+              quote={post.quote}
+              author={post.user}
+              time={post.createdAt}
+              likes={post._count.likes}
+              comments={post._count.comments}
+              tags={post.tags}
               layout="column"
-              image="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQ-jIuSd4hlWSUD0PXmPRCmiA5uFq2HOMrpKQ&s"
-              title={`Bài viết ${i + 1}`}
-              description="Mô tả ngắn..."
-              author="IamSuSu"
-              time="Hôm qua"
-              readTime="19 phút đọc"
-              likes={120 + i}
-              comments={45 + i}
+              onClick={() => handlePostClick(post.post_id)}
             />
           </Box>
         ))}

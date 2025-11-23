@@ -1,19 +1,20 @@
 export const topics = [
-  "Art & Photography",
-  "Biographies & Memoirs",
-  "Business & Economics",
-  "How-To & Self Help",
-  "Children's Books",
-  "Dictionaries",
-  "Education & Teaching",
-  "Fiction & Literature",
-  "Magazines",
-  "Medical & Health",
-  "Parenting & Relationships",
-  "Reference",
-  "Science & Technology",
-  "History & Politics",
-  "Travel & Tourism",
-  "Cookbooks & Food",
-  "Other",
+"quan điểm - tranh luận",
+"khoa học - công nghệ",
+"tài chính",
+"nhiếp ảnh",
+"thinking out loud",
+"giáo dục",
+"game",
+"phát triển bản thân",
+"other"
 ];
+
+export type CreateDraftResponse = {
+  message: string;
+  post: {
+    post_id: number;
+    user_id: number;
+    status: string;
+  };
+};

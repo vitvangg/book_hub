@@ -1,0 +1,185 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum BlockType {
+  text
+  image
+  quote
+}
+
+enum GenderType {
+  male
+  female
+}
+
+enum PostStatus {
+  draft
+  published
+}
+
+enum TextLevel {
+  normal
+  h2
+  h3
+}
+
+enum TextFormat {
+  normal
+  bold
+  italic
+  underline
+}
+
+enum TextAlign {
+  left
+  center
+  right
+  justify
+}
+
+model User {
+  user_id        Int      @id @default(autoincrement())
+  email     String   @unique
+  password  String
+  name      String?
+  avatar    String?
+  bio       String?
+  gender    GenderType?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  posts     Post[]
+  feedbacks Feedback[]
+  likes     Like[]
+  comments  Comment[]
+  followed Follow[] @relation("Followed")
+  following Follow[] @relation("Following")
+
+  @@map("user")
+}
+
+model Post {
+  post_id        Int      @id @default(autoincrement())
+  title       String
+  quote       String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user_id   Int
+  user      User     @relation(fields: [user_id], references: [user_id], onDelete: Cascade)
+  status    PostStatus @default(draft)
+  post_tags PostTag[]
+  blocks    Block[]
+  likes     Like[]
+  comments  Comment[]
+
+  @@map("post")
+}
+
+model Block {
+  block_id      Int      @id @default(autoincrement())
+  type         BlockType  @default(text)
+  content      Json
+  order_index  Float
+  textLevel    TextLevel?    // h2, h3, hoặc normal
+  textFormat   TextFormat?    // bold, italic, underline
+  textAlign    TextAlign?     // left, center, right, justify
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  post         Post     @relation(fields: [post_id], references: [post_id], onDelete: Cascade)
+  post_id      Int
+
+  @@map("block")
+}
+
+model Tag {
+  tag_id      Int      @id @default(autoincrement())
+  name       String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  post_tags     PostTag[]
+
+  @@map("tag")
+}
+
+model PostTag {
+  id       Int  @id @default(autoincrement())
+  post_id  Int
+  tag_id   Int
+
+  post     Post @relation(fields: [post_id], references: [post_id], onDelete: Cascade)
+  tag      Tag  @relation(fields: [tag_id], references: [tag_id], onDelete: Cascade)
+
+  @@unique([post_id, tag_id], name: "unique_post_tag")
+  @@map("post_tag")
+}
+
+model Like {
+  user_id    Int
+  post_id    Int
+  createdAt DateTime @default(now())
+
+  @@unique([user_id, post_id], name: "unique_like")
+  user       User     @relation(fields: [user_id], references: [user_id], onDelete: Cascade)
+  post       Post     @relation(fields: [post_id], references: [post_id], onDelete: Cascade)
+
+  @@map("like")
+}
+
+model Comment {
+  comment_id   Int       @id @default(autoincrement())
+  content      String
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  user_id      Int
+  post_id      Int
+  parent_id    Int?      // comment cha (nullable)
+
+  // Quan hệ
+  user         User      @relation(fields: [user_id], references: [user_id], onDelete: Cascade)
+  post         Post      @relation(fields: [post_id], references: [post_id], onDelete: Cascade)
+
+  // Self relation
+  parent       Comment?  @relation("CommentReplies", fields: [parent_id], references: [comment_id], onDelete: Cascade)
+  replies      Comment[] @relation("CommentReplies")
+
+  @@map("comment")
+}
+
+model Follow {
+  followed_id  Int
+  following_id Int
+  createdAt   DateTime @default(now())
+
+  @@unique([followed_id, following_id], name: "unique_follow")
+  followed    User     @relation("Followed", fields: [followed_id], references: [user_id], onDelete: Cascade)
+  following   User     @relation("Following", fields: [following_id], references: [user_id], onDelete: Cascade)
+
+  @@map("follow")
+}
+
+model Feedback {
+  feedback_id  Int      @id @default(autoincrement())
+  user_id      Int
+  message      String
+  createdAt    DateTime @default(now())
+  user         User     @relation(fields: [user_id], references: [user_id], onDelete: Cascade)
+
+  @@map("feedback")
+}
+
+
+
+
+
+

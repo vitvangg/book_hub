@@ -1,34 +1,39 @@
-import { Box, Avatar, Tooltip, CardMedia } from "@mui/material";
-
-const topics = [
-  "Art & Photography",
-  "Biographies & Memoirs",
-  "Business & Economics",
-  "How-To & Self Help",
-  "Children's Books",
-  "Dictionaries",
-  "Education & Teaching",
-  "Fiction & Literature",
-  "Magazines",
-  "Medical & Health",
-  "Parenting & Relationships",
-  "Reference",
-  "Science & Technology",
-  "History & Politics",
-  "Travel & Tourism",
-  "Cookbooks & Food",
-  "Other",
-];
-
-const topicImages = [
-  "/images/art.jpg",
-  "/images/biographies.jpg",
-  "/images/business.jpg",
-  "/images/selfhelp.jpg",
-  // ... các ảnh khác tương ứng
-];
+import { Box, Tooltip } from "@mui/material";
+import { useListTagQuery } from "../../redux/service";
+import { useNavigate } from "react-router-dom";
+import { setCurrentTag } from "../../redux/slice";
+import { useDispatch } from "react-redux";
 
 export default function TopicSidebar() {
+  const navigate = useNavigate();
+  const dispatch = useDispatch();
+  // danh sach tag
+  const { data } = useListTagQuery();
+  const tagsArray = data?.tags ?? [];
+
+  if (!tagsArray) {
+    console.error("Failed to load tags");
+    return null;
+  }
+
+  function slugify(str: string) {
+    return str
+      .normalize("NFD")                // tách dấu
+      .replace(/[\u0300-\u036f]/g, "") // remove dấu
+      .replace(/đ/g, "d")              
+      .replace(/Đ/g, "D")
+      .toLowerCase()
+      .replace(/[^a-z0-9\s-]/g, "")    // bỏ ký tự đặc biệt
+      .replace(/\s+/g, "-")            // space → -
+      .replace(/-+/g, "-")             // gộp nhiều dấu - thành 1
+      .replace(/^-+|-+$/g, "");        // bỏ - ở đầu/đuôi
+  }
+
+  const handleTagClick = (tagName: string, tagId: number) => {
+    dispatch(setCurrentTag(tagId));
+    navigate(`/topic/${slugify(tagName)}`);
+  };
+
   return (
     <Box
       sx={{
@@ -65,12 +70,12 @@ export default function TopicSidebar() {
           },
         }}
       >
-        {topics.map((topic) => (
-          <Tooltip key={topic} title={topic} placement="right">
+        {tagsArray.map((tag: any) => (
+          <Tooltip key={tag.tag_id} title={tag.name} placement="right">
             <Box
               component="img"
-              src="/test.jpg"
-              alt={topic}
+              src={`/${tag.tag_id}.jpg`}
+              alt={tag.name}
               sx={{
                 width: 64,
                 height: 64,
@@ -80,6 +85,7 @@ export default function TopicSidebar() {
                 transition: "0.2s",
                 flexShrink: 0,
               }}
+              onClick={() => handleTagClick(tag.name, tag.tag_id)}
             />
           </Tooltip>
         ))}

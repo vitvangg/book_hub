@@ -1,4 +1,4 @@
-import { use, useState } from "react";
+import { useState } from "react";
 import React from "react";
 import {
   Avatar,
@@ -14,11 +14,22 @@ import {
 import MailIcon from "@mui/icons-material/Mail";
 import NotificationsIcon from "@mui/icons-material/Notifications";
 import { useNavigate } from "react-router-dom";
+import { useCreateDraftPostMutation, useLogoutMutation } from "../../redux/service";
+import { useDispatch, useSelector } from "react-redux";
+import { clearMyInfo } from "../../redux/slice";
+import { toast } from "react-toastify";
 
 export default function Feature() {
   const [anchorElUser, setAnchorElUser] = useState<HTMLElement | null>(null);
   const settings = ["Trang cá nhân", "Đăng xuất"];
   const navigate = useNavigate();
+
+  const { myInfo } = useSelector((state: any) => state.service);
+  console.log("myInfo in Feature:", myInfo);
+  const [logout] = useLogoutMutation();
+  const dispatch = useDispatch();
+
+  const [createDraftPost] = useCreateDraftPostMutation();
 
   const handleOpenUserMenu = (event: React.MouseEvent<HTMLElement>) => {
     setAnchorElUser(event.currentTarget);
@@ -28,6 +39,31 @@ export default function Feature() {
     setAnchorElUser(null);
   };
 
+  const handleNavigateToProfile = () => {
+    navigate(`/user/${myInfo.user_id}`);
+    handleCloseUserMenu();
+  };
+
+  const handleLogout = async () => {
+    try {
+      await logout(null as any).unwrap();
+      dispatch(clearMyInfo());
+      navigate("/home");
+      handleCloseUserMenu();
+      toast.success("Logout successful!");
+    } catch (error) {
+      toast.error("Failed to log out");
+    }
+  }
+  const handleClickNewPost = async () => {
+    try {
+      const res = await createDraftPost().unwrap();
+      const postID = res.post.post_id;
+      navigate(`/create/${postID}`);
+    } catch (error) {
+      toast.error("Failed to create new post");
+    }
+  }
   return (
     <Stack
       direction="row"
@@ -101,7 +137,7 @@ export default function Feature() {
           "&:hover": { color: "white", transform: "scale(1.03)" },
           "&:active": { transform: "scale(0.95)" },
         }}
-        onClick={() => navigate("/create")}
+        onClick={handleClickNewPost}
       >
         New post
       </Button>
@@ -112,7 +148,7 @@ export default function Feature() {
           <IconButton onClick={handleOpenUserMenu} sx={{ p: 0 }}>
             <Avatar
               alt="User Avatar"
-              src="/static/images/avatar/2.jpg"
+              src={myInfo?.avatar || "/default_avatar.png"}
               sx={{
                 width: 40,
                 height: 40,
@@ -143,7 +179,13 @@ export default function Feature() {
           {settings.map((setting) => (
             <MenuItem
               key={setting}
-              onClick={handleCloseUserMenu}
+              onClick={() => {
+                if (setting === "Đăng xuất") {
+                  handleLogout();
+                } else if (setting === "Trang cá nhân") {
+                  handleNavigateToProfile();
+                }
+              }}
               sx={{
                 fontSize: "14px",
                 "&:hover": { bgcolor: "#333" },
@@ -157,3 +199,4 @@ export default function Feature() {
     </Stack>
   );
 }
+

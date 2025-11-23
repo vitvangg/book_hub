@@ -1,29 +1,43 @@
 import { Box, Avatar, Typography, Button, Stack } from "@mui/material";
 import ChatBubbleOutlineIcon from "@mui/icons-material/ChatBubbleOutline";
-import { useState } from "react";
+import { useNavigate, useParams } from "react-router-dom";
+import { useCheckFollowQuery, useFollowUserMutation } from "../../redux/service";
 
 interface AuthorProfileProps {
-  username: string;
-  displayName: string;
+  email: string;
+  name: string;
   avatarUrl: string;
   followers: number;
   following: number;
+  bio: string;
   isCurrentUser: boolean;
 }
 
 export default function AuthorProfile({
-  username,
-  displayName,
+  email,
+  name,
   avatarUrl,
   followers,
   following,
+  bio,
   isCurrentUser,
 }: AuthorProfileProps) {
   // ✅ State lưu trạng thái follow
-  const [isFollowing, setIsFollowing] = useState(false);
+  const navigate = useNavigate();
+  const { userID } = useParams();
+  console.log("userID:", userID);
+  const { data, refetch } = useCheckFollowQuery(Number(userID));
 
-  const handleFollowToggle = () => {
-    setIsFollowing((prev) => !prev);
+  const [follow, followData] = useFollowUserMutation();
+  if (followData.isLoading) return <div>Loading...</div>;
+
+  const handleFollow = async () => {
+    try {
+      await follow(Number(userID)).unwrap();
+      await refetch().unwrap();
+    } catch (error) {
+      console.error("Failed to follow user:", error);
+    }
   };
 
   return (
@@ -47,18 +61,21 @@ export default function AuthorProfile({
         sx={{ width: 120, height: 120, mb: 2, border: "2px solid gray" }}
       />
 
-      {/* Tên hiển thị và username */}
+      {/* Tên hiển thị và email */}
       <Typography variant="h5" fontWeight={700}>
-        {displayName}
+        {name}
       </Typography>
       <Typography color="gray" mb={2}>
-        @{username}
+        {email}
       </Typography>
 
       {/* Nút hành động */}
       {isCurrentUser ? (
         <Button
           variant="outlined"
+          onClick={() => {
+            navigate("/edit-profile");
+          }}
           sx={{
             color: "white",
             borderColor: "gray",
@@ -71,19 +88,19 @@ export default function AuthorProfile({
       ) : (
         <Stack direction="row" spacing={2} mb={2}>
           <Button
-            variant={isFollowing ? "outlined" : "contained"}
-            onClick={handleFollowToggle}
+            variant={data?.data.isFollowing ? "outlined" : "contained"}
+            onClick={handleFollow}
             sx={{
-              bgcolor: isFollowing ? "transparent" : "#1db954",
-              color: isFollowing ? "white" : "black",
+              bgcolor: data?.data.isFollowing ? "transparent" : "#1db954",
+              color: data?.data.isFollowing ? "white" : "black",
               borderColor: "gray",
               "&:hover": {
-                bgcolor: isFollowing ? "#222" : "#1ed760",
+                bgcolor: data?.data.isFollowing ? "#222" : "#1ed760",
               },
               minWidth: 100,
             }}
           >
-            {isFollowing ? "Unfollow" : "Follow"}
+            {data?.data.isFollowing ? "Unfollow" : "Follow"}
           </Button>
 
           <Button
@@ -104,7 +121,7 @@ export default function AuthorProfile({
       <Stack direction="row" spacing={4}>
         <Box>
           <Typography fontWeight={600}>
-            {followers + (isFollowing ? 1 : 0)}
+            {followers}
           </Typography>
           <Typography color="gray" variant="body2">
             followers
@@ -117,6 +134,11 @@ export default function AuthorProfile({
           </Typography>
         </Box>
       </Stack>
+
+      {/* Bio */}
+      <Box mt={2}>
+        <Typography variant="body1">{bio}</Typography>
+      </Box>
     </Box>
   );
 }

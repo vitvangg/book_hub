@@ -1,48 +1,23 @@
 import { Tabs, Tab, Box, Stack, Pagination } from "@mui/material";
 import PostCard from "../common/PostCard";
-import { useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
+import { useParams } from "react-router-dom";
+import { useListPostByUserQuery } from "../../redux/service";
 
 export default function TabsProfile() {
   const [searchParams, setSearchParams] = useSearchParams();
+  const navigate = useNavigate();
+  const { userID } = useParams();
 
-  const tabs = ["Posts"];
-  const tabMap = { post: 0 };
-  const reverseTabMap = { 0: "post" };
-
-  // Đọc từ URL, mặc định tab 0 (Article) và page 1
-  const currentTab =
-    tabMap[searchParams.get("type") as keyof typeof tabMap] ?? 0;
   const currentPage = parseInt(searchParams.get("page") || "1");
 
-  // Mỗi tab có 15 bài giả để test
-  const allPosts = tabs.map((name) =>
-    [...Array(15)].map((_, i) => ({
-      image:
-        "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQ-jIuSd4hlWSUD0PXmPRCmiA5uFq2HOMrpKQ&s",
-      title: `${name} - Bài viết ${i + 1}`,
-      description: "Mô tả ngắn về bài viết...",
-      author: "IamSuSu",
-      time: "2 giờ trước",
-      readTime: "10 phút đọc",
-      likes: 120 + i,
-      comments: 45 + i,
-    }))
-  );
+  // Goi API lấy bài viết của user
+  const { data, isLoading } = useListPostByUserQuery({ userID: Number(userID), page: currentPage });
+  if (isLoading) return <div>Loading...</div>;
 
-  // Phân trang: mỗi trang 5 bài
-  const postsPerPage = 5;
-  const start = (currentPage - 1) * postsPerPage;
-  const end = start + postsPerPage;
-  const currentPosts = allPosts[currentTab].slice(start, end);
-
-  interface TabChangeEvent extends React.SyntheticEvent<Element, Event> {}
-
-  const handleTabChange = (_e: TabChangeEvent, newVal: number) => {
-    const params = new URLSearchParams(searchParams);
-    params.set("type", reverseTabMap[newVal as keyof typeof reverseTabMap]);
-    params.set("page", "1"); // reset về trang 1 khi đổi tab
-    setSearchParams(params);
-  };
+  const currentTab = 0
+  const currentPosts = data?.posts || [];
+  const totalPages = data?.totalPages || 1;
 
   const handlePageChange = (_e: React.ChangeEvent<unknown>, value: number) => {
     const params = new URLSearchParams(searchParams);
@@ -50,12 +25,16 @@ export default function TabsProfile() {
     setSearchParams(params);
   };
 
+  const handlePostClick = (postID: number) => {
+    navigate(`/post/${postID}`);
+  };
+
+
   return (
     <Box>
       {/* --- Thanh Tabs --- */}
       <Tabs
         value={currentTab}
-        onChange={handleTabChange}
         variant="scrollable"
         scrollButtons="auto"
         sx={{
@@ -77,41 +56,58 @@ export default function TabsProfile() {
           },
         }}
       >
-        {tabs.map((label, i) => (
-          <Tab key={i} label={label} />
-        ))}
+        <Tab label="Bài viết" />
       </Tabs>
 
       {/* --- Nội dung từng tab --- */}
       <Stack spacing={2} p={2}>
-        {currentPosts.map((post, index) => (
-          <PostCard key={index} {...post} />
-        ))}
+        {currentPosts.length === 0 ? (
+          <Box sx={{ color: "white", textAlign: "center", mt: 5 }}>
+            Không có bài viết nào.
+          </Box>
+        ) : (
+          <>
+          {currentPosts.map((post: any, index: number) => (
+            <PostCard
+                key={index}
+                title={post.title}
+                quote={post.quote}
+                author={post.user}
+                time={post.createdAt}
+                likes={post._count.likes}
+                comments={post._count.comments}
+                tags={post.tags}
+                layout="row"
+                onClick={() => handlePostClick(post.post_id)} 
+            />
+          ))}
 
-        {/* --- Phân trang --- */}
-        <Stack alignItems="center" mt={3}>
-          <Pagination
-            count={Math.ceil(allPosts[currentTab].length / postsPerPage)} // tổng số trang
-            page={currentPage}
-            onChange={handlePageChange}
-            size="large"
-            siblingCount={1}
-            boundaryCount={1}
-            sx={{
-              color: "white",
-              "& .MuiPaginationItem-root": {
-                color: "white", // 🎨 màu chữ
-                "&:hover": {
-                  bgcolor: "#1db954", // 🎨 màu khi hover
+          {/* --- Phân trang --- */}
+          <Stack alignItems="center" mt={3}>
+            <Pagination
+              count={totalPages || 1}
+              page={currentPage}
+              onChange={handlePageChange}
+              size="large"
+              siblingCount={1}
+              boundaryCount={1}
+              sx={{
+                color: "white",
+                "& .MuiPaginationItem-root": {
+                  color: "white", // 🎨 màu chữ
+                  "&:hover": {
+                    bgcolor: "#1db954", // 🎨 màu khi hover
+                  },
+                  "&.Mui-selected": {
+                    bgcolor: "white", // 🎨 màu nút đang chọn
+                    color: "#121212", // 🎨 màu chữ nút đang chọn
+                  },
                 },
-                "&.Mui-selected": {
-                  bgcolor: "white", // 🎨 màu nút đang chọn
-                  color: "#121212", // 🎨 màu chữ nút đang chọn
-                },
-              },
-            }}
-          />
-        </Stack>
+              }}
+            />
+          </Stack>
+          </>
+        )}
       </Stack>
     </Box>
   );

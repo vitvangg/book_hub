@@ -1,65 +1,86 @@
-import { useState } from "react";
 import { Tabs, Tab, Box, Stack, Pagination } from "@mui/material";
 import PostCard from "../common/PostCard";
+import { useNavigate, useSearchParams } from "react-router-dom";
+import { useListHotPostsByTagQuery, useListLatestPostsByTagQuery, useListTopRatedPostsByTagQuery} from "../../redux/service";
+import { useSelector } from "react-redux";
 
-interface TabsTopicProps {
-  topic: string;
-}
+export default function TabsTopic() {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const navigate = useNavigate();
+  const currentPage = parseInt(searchParams.get("page") || "1");
+  const { currentTag } = useSelector((state: any) => state.service);
+  const tagId = currentTag;
 
-export default function TabsTopic({ topic }: TabsTopicProps) {
-  const [tab, setTab] = useState(0);
-  const [page, setPage] = useState(1);
 
-  const tabs = ["Trending", "New", "Top"];
+  const tabs = [
+    "Mới nhất",
+    "Sôi nổi",
+    "Đánh giá cao nhất",
+  ];
+  const tabMap = {
+    "latest": 0,
+    "trending": 1,
+    "top-rated": 2,
+  };
+  const reverseTabMap = {
+    0: "latest",
+    1: "trending",
+    2: "top-rated",
+  };
 
-  // Mỗi tab có 15 bài giả để test
-  const allPosts = tabs.map((name) =>
-    [...Array(15)].map((_, i) => ({
-      image: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQ-jIuSd4hlWSUD0PXmPRCmiA5uFq2HOMrpKQ&s",
-      title: `${name} - Bài viết ${i + 1}`,
-      description: "Mô tả ngắn về bài viết...",
-      author: "IamSuSu",
-      time: "2 giờ trước",
-      readTime: "10 phút đọc",
-      likes: 120 + i,
-      comments: 45 + i,
-    }))
-  );
+  // goi API lấy bài viết theo tag và tab
+    const { data: latestByTag } = useListLatestPostsByTagQuery({ page: currentPage, tagId: Number(tagId) });
+    const { data: ratedByTag } = useListTopRatedPostsByTagQuery({ page: currentPage, tagId: Number(tagId) });
+    const { data: hotByTag } = useListHotPostsByTagQuery({ page: currentPage, tagId: Number(tagId) });
 
-  // Phân trang: mỗi trang 5 bài
-  const postsPerPage = 5;
-  const start = (page - 1) * postsPerPage;
-  const end = start + postsPerPage;
-  const currentPosts = allPosts[tab].slice(start, end);
+
+  const currentTab = tabMap[searchParams.get("type") as keyof typeof tabMap] ?? 0;
+
+  let currentPosts = [] as any[];
+  let totalPages = 1;
+
+  switch (currentTab) {
+    case 0:
+      currentPosts = latestByTag?.posts || [];
+      totalPages = latestByTag?.totalPages || 1;
+      break;
+    case 1:
+      currentPosts = hotByTag?.posts || [];
+      totalPages = hotByTag?.totalPages || 1;
+      break;
+    case 2:
+      currentPosts = ratedByTag?.posts || [];
+      totalPages = ratedByTag?.totalPages || 1;
+      break;
+    default:
+      break;
+  }
 
   interface TabChangeEvent extends React.SyntheticEvent<Element, Event> {}
-
-  interface Post {
-    image: string;
-    title: string;
-    description: string;
-    author: string;
-    time: string;
-    readTime: string;
-    likes: number;
-    comments: number;
-  }
-  const handleTabChange = (e: TabChangeEvent, newVal: number) => {
-    setTab(newVal);
-    setPage(1); // reset về trang 1 khi đổi tab
+  const handleTabChange = (_e: TabChangeEvent, newVal: number) => {
+    const params = new URLSearchParams(searchParams);
+    params.set("type", reverseTabMap[newVal as keyof typeof reverseTabMap]);
+    params.set("page", "1"); // reset về trang 1 khi đổi tab
+    setSearchParams(params);
   };
+
   const handlePageChange = (_e: React.ChangeEvent<unknown>, value: number) => {
-    setPage(value);
+    const params = new URLSearchParams(searchParams);
+    params.set("page", value.toString());
+    setSearchParams(params);
+  };
+  const handlePostClick = (postID: number) => {
+    navigate(`/post/${postID}`);
   };
 
   return (
     <Box>
       {/* --- Thanh Tabs --- */}
       <Tabs
-        value={tab}
-        onChange={handleTabChange}
+        value={currentTab}
         variant="scrollable"
         scrollButtons="auto"
+        onChange={handleTabChange}
         sx={{
           borderBottom: 1,
           borderColor: "divider",
@@ -86,34 +107,53 @@ export default function TabsTopic({ topic }: TabsTopicProps) {
 
       {/* --- Nội dung từng tab --- */}
       <Stack spacing={2} p={2}>
-        {currentPosts.map((post, index) => (
-          <PostCard key={index} {...post} />
-        ))}
+        {currentPosts.length === 0 ? (
+          <Box sx={{ color: "white", textAlign: "center", mt: 5 }}>
+            Không có bài viết nào.
+          </Box>
+        ) : (
+          <>
+          {currentPosts.map((post: any, index: number) => (
+            <PostCard
+                key={index}
+                title={post.title}
+                quote={post.quote}
+                author={post.user}
+                time={post.createdAt}
+                likes={post._count.likes}
+                comments={post._count.comments}
+                tags={post.tags}
+                layout="row"
+                onClick={() => handlePostClick(post.post_id)} 
+            />
+          ))}
 
-        {/* --- Phân trang --- */}
-        <Stack alignItems="center" mt={3}>
-          <Pagination
-            count={Math.ceil(allPosts[tab].length / postsPerPage)} // tổng số trang
-            page={page}
-            onChange={handlePageChange}
-            color="primary"
-            size="large"
-            siblingCount={1}
-            boundaryCount={1}
-             sx={{
-              "& .MuiPaginationItem-root": {  
-                color: "white",           // 🎨 màu chữ
-                "&:hover": {
-                  bgcolor: "#1db954",     // 🎨 màu khi hover
+          {/* --- Phân trang --- */}
+          <Stack alignItems="center" mt={3}>
+            <Pagination
+              count={totalPages || 1}
+              page={currentPage}
+              onChange={handlePageChange}
+              size="large"
+              siblingCount={1}
+              boundaryCount={1}
+              sx={{
+                color: "white",
+                "& .MuiPaginationItem-root": {
+                  color: "white", // 🎨 màu chữ
+                  "&:hover": {
+                    bgcolor: "#1db954", // 🎨 màu khi hover
+                  },
+                  "&.Mui-selected": {
+                    bgcolor: "white", // 🎨 màu nút đang chọn
+                    color: "#121212", // 🎨 màu chữ nút đang chọn
+                  },
                 },
-                "&.Mui-selected": {
-                  bgcolor: "white",     // 🎨 màu nút đang chọn
-                  color: "#121212", // 🎨 màu chữ nút đang chọn
-                },
-              },
-            }}
-          />
-        </Stack>
+              }}
+            />
+          </Stack>
+          </>
+        )}
       </Stack>
     </Box>
   );

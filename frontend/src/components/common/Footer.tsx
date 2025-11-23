@@ -1,7 +1,7 @@
 function Footer() {
   return (
     <footer>
-      <p>© 2023 BookHub. All rights reserved.</p>
+      <p>© 2025 BookHub. All rights reserved.</p>
     </footer>
   );
 }

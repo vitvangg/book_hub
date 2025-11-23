@@ -1,6 +1,4 @@
-import { Container } from "@mui/material";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import Header from "./components/common/Header";
 import Loading from "./components/common/Loading";
 import MainLayout from "./pages/protected/MainLayout";
 import Error from "./pages/Error";
@@ -13,8 +11,14 @@ import TopicContent from "./components/topic/TopicContent";
 import PostPage from "./components/post/PostPage";
 import ProfileLayout from "./components/profile/ProfileLayout";
 import CreatePost from "./components/modals/CreatePost";
+import EditProfile from "./components/profile/EditProfile";
+import UpdatePost from "./components/post/UpdatePost";
+import { ToastContainer } from "react-toastify";
+
+
 
 function App() {
+  
   return (
     <BrowserRouter>
       <Routes>
@@ -25,7 +29,7 @@ function App() {
         {/* Protected routes */}
         <Route element={<ProtectedLayout />}>
           <Route
-            path="/"
+            path="/home"
             element={
               <MainLayout>
                 <Content />
@@ -41,7 +45,7 @@ function App() {
             }
           />
           <Route
-            path="/topic"
+            path="/topic/:topicName"
             element={
               <MainLayout>
                 <TopicContent />
@@ -49,7 +53,7 @@ function App() {
             }
           />
           <Route
-            path="/post"
+            path="/post/:postID"
             element={
               <MainLayout>
                 <PostPage />
@@ -57,18 +61,34 @@ function App() {
             }
           />
           <Route
-            path="/author"
+            path="/user/:userID"
             element={
-              <MainLayout showSidebar={false}>
+              <MainLayout>
                 <ProfileLayout />
               </MainLayout>
             }
           />
           <Route
-            path="/create"
+            path="/create/:postID?"
             element={
               <MainLayout>
                 <CreatePost />
+              </MainLayout>
+            }
+          />
+          <Route
+            path="/edit-profile"
+            element={
+              <MainLayout>
+                <EditProfile />
+              </MainLayout>
+            }
+          />
+          <Route
+            path="/post/:postID/edit"
+            element={
+              <MainLayout>
+                <UpdatePost />
               </MainLayout>
             }
           />
@@ -76,6 +96,8 @@ function App() {
           <Route path="/*" element={<Error />} />
         </Route>
       </Routes>
+            {/* Container đặt ở cuối cùng */}
+      <ToastContainer position="top-right" autoClose={3000} />
     </BrowserRouter>
   );
 }

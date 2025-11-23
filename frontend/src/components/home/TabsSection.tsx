@@ -1,57 +1,61 @@
 import { Tabs, Tab, Box, Stack, Pagination } from "@mui/material";
 import PostCard from "../common/PostCard";
-import { useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
+import { useListHotPostsQuery, useListLatestPostsQuery, useListPostByFollowingUsersQuery, useListRatedPostsQuery } from "../../redux/service";
 
 export default function TabsSection() {
   const [searchParams, setSearchParams] = useSearchParams();
+  const navigate = useNavigate();
 
   const tabs = [
-    "Dành cho bạn",
-    "Theo tác giả",
     "Mới nhất",
+    "Theo tác giả",
     "Sôi nổi",
     "Đánh giá cao nhất",
   ];
   const tabMap = {
-    "for-you": 0,
+    "latest": 0,
     "by-author": 1,
-    latest: 2,
-    trending: 3,
-    "top-rated": 4,
+    "trending": 2,
+    "top-rated": 3,
   };
   const reverseTabMap = {
-    0: "for-you",
+    0: "latest",
     1: "by-author",
-    2: "latest",
-    3: "trending",
-    4: "top-rated",
+    2: "trending",
+    3: "top-rated",
   };
-
-  // Đọc từ URL, mặc định tab 0 và page 1
-  const currentTab =
-    tabMap[searchParams.get("type") as keyof typeof tabMap] ?? 0;
   const currentPage = parseInt(searchParams.get("page") || "1");
 
-  // Mỗi tab có 15 bài giả để test
-  const allPosts = tabs.map((name) =>
-    [...Array(15)].map((_, i) => ({
-      image:
-        "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQ-jIuSd4hlWSUD0PXmPRCmiA5uFq2HOMrpKQ&s",
-      title: `${name} - Bài viết ${i + 1}`,
-      description: "Mô tả ngắn về bài viết...",
-      author: "IamSuSu",
-      time: "2 giờ trước",
-      readTime: "10 phút đọc",
-      likes: 120 + i,
-      comments: 45 + i,
-    }))
-  );
+    // Goi API lấy bài viết mới nhất
+  const { data: latestPosts, isLoading } = useListLatestPostsQuery({ page: currentPage });
+  const { data: ratedPosts } = useListRatedPostsQuery({ page: currentPage });
+  const { data: hotPosts } = useListHotPostsQuery({ page: currentPage });
+  const { data: followingPosts } = useListPostByFollowingUsersQuery({ page: currentPage });
+  if (isLoading) return <div>Loading...</div>;
 
-  // Phân trang: mỗi trang 5 bài
-  const postsPerPage = 5;
-  const start = (currentPage - 1) * postsPerPage;
-  const end = start + postsPerPage;
-  const currentPosts = allPosts[currentTab].slice(start, end);
+  const currentTab = tabMap[searchParams.get("type") as keyof typeof tabMap] ?? 0;
+  let currentPosts =  [];
+  let totalPages = 1;
+  // Đọc từ URL, mặc định tab 0 và page 1
+    switch(currentTab) {
+      case 0: // Mới nhất
+        currentPosts = latestPosts?.posts || [];
+        totalPages = latestPosts?.totalPages || 1;
+        break;
+      case 1: // Theo tác giả
+        currentPosts = followingPosts?.posts || [];
+        totalPages = followingPosts?.totalPages || 1;
+        break;
+      case 2: // Sôi nổi
+        currentPosts = hotPosts?.posts || [];
+        totalPages = hotPosts?.totalPages || 1;
+        break;
+      case 3: // Đánh giá cao nhất
+        currentPosts = ratedPosts?.posts || [];
+        totalPages = ratedPosts?.totalPages || 1;
+        break;
+  }
 
   interface TabChangeEvent extends React.SyntheticEvent<Element, Event> {}
 
@@ -68,14 +72,18 @@ export default function TabsSection() {
     setSearchParams(params);
   };
 
+  const handlePostClick = (postID: number) => {
+    navigate(`/post/${postID}`);
+  };
+
   return (
     <Box>
       {/* --- Thanh Tabs --- */}
       <Tabs
         value={currentTab}
-        onChange={handleTabChange}
         variant="scrollable"
         scrollButtons="auto"
+        onChange={handleTabChange}
         sx={{
           borderBottom: 1,
           borderColor: "divider",
@@ -102,34 +110,53 @@ export default function TabsSection() {
 
       {/* --- Nội dung từng tab --- */}
       <Stack spacing={2} p={2}>
-        {currentPosts.map((post, index) => (
-          <PostCard key={index} {...post} />
-        ))}
+        {currentPosts.length === 0 ? (
+          <Box sx={{ color: "white", textAlign: "center", mt: 5 }}>
+            Không có bài viết nào.
+          </Box>
+        ) : (
+          <>
+          {currentPosts.map((post: any, index: number) => (
+            <PostCard
+                key={index}
+                title={post.title}
+                quote={post.quote}
+                author={post.user}
+                time={post.createdAt}
+                likes={post._count.likes}
+                comments={post._count.comments}
+                tags={post.tags}
+                layout="row"
+                onClick={() => handlePostClick(post.post_id)} 
+            />
+          ))}
 
-        {/* --- Phân trang --- */}
-        <Stack alignItems="center" mt={3}>
-          <Pagination
-            count={Math.ceil(allPosts[currentTab].length / postsPerPage)} // tổng số trang
-            page={currentPage}
-            onChange={handlePageChange}
-            size="large"
-            siblingCount={1}
-            boundaryCount={1}
-            sx={{
-              color: "white",
-              "& .MuiPaginationItem-root": {
-                color: "white", // 🎨 màu chữ
-                "&:hover": {
-                  bgcolor: "#1db954", // 🎨 màu khi hover
+          {/* --- Phân trang --- */}
+          <Stack alignItems="center" mt={3}>
+            <Pagination
+              count={totalPages || 1}
+              page={currentPage}
+              onChange={handlePageChange}
+              size="large"
+              siblingCount={1}
+              boundaryCount={1}
+              sx={{
+                color: "white",
+                "& .MuiPaginationItem-root": {
+                  color: "white", // 🎨 màu chữ
+                  "&:hover": {
+                    bgcolor: "#1db954", // 🎨 màu khi hover
+                  },
+                  "&.Mui-selected": {
+                    bgcolor: "white", // 🎨 màu nút đang chọn
+                    color: "#121212", // 🎨 màu chữ nút đang chọn
+                  },
                 },
-                "&.Mui-selected": {
-                  bgcolor: "white", // 🎨 màu nút đang chọn
-                  color: "#121212", // 🎨 màu chữ nút đang chọn
-                },
-              },
-            }}
-          />
-        </Stack>
+              }}
+            />
+          </Stack>
+          </>
+        )}
       </Stack>
     </Box>
   );

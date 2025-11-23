@@ -2,12 +2,45 @@ import { Box, Stack, IconButton, Avatar, Typography } from "@mui/material";
 import FavoriteBorderIcon from "@mui/icons-material/FavoriteBorder";
 import ChatBubbleOutlineIcon from "@mui/icons-material/ChatBubbleOutline";
 import PersonAddAltIcon from "@mui/icons-material/PersonAddAlt";
+import { useSelector } from "react-redux";
+import { useParams } from "react-router-dom";
+import {  useLikePostMutation } from "../../redux/service";
+import { useEffect, useState } from "react";
+import FavoriteIcon from "@mui/icons-material/Favorite";
 
 export default function SideBar({
+  post,
   onCommentClick,
 }: {
+  post: any;
   onCommentClick: () => void;
 }) {
+  const [isLiked, setIsLiked] = useState(false);
+
+  const [likePost] = useLikePostMutation();
+
+  const { myInfo } = useSelector((state: any) => state.service);
+  const userID = myInfo?.user_id;
+
+  const handleLikeClick = async () => {
+    try {
+      const res = await likePost(String(post.post_id)).unwrap();
+      if (res.like) {
+        setIsLiked(false);
+      }
+      else {
+        setIsLiked(true);
+      }
+    } catch (error) {
+      console.error("Failed to like post:", error);
+    }
+  };
+
+  useEffect(() => {
+    console.log("Post likes:", post?.likes);
+    setIsLiked(post?.likes.some((like: any) => like.user_id === userID) ?? false);
+  }, [post, userID]);
+
   return (
     <Stack
       spacing={3}
@@ -15,19 +48,20 @@ export default function SideBar({
       sx={{ width: "80px", maxWidth: "80px" }}
     >
       {/* Like */}
-      <Box textAlign="center">
-        <IconButton
-          sx={{
-            color: "#757575",
-            "&:hover": { color: "#e91e63" },
-          }}
-        >
-          <FavoriteBorderIcon fontSize="large" />
-        </IconButton>
-        <Typography variant="body2" fontWeight={600}>
-          6
-        </Typography>
-      </Box>
+    <Box textAlign="center">
+      <IconButton
+        sx={{
+          color: isLiked ? "#e91e63" : "#757575",
+          "&:hover": { color: "#e91e63" },
+        }}
+        onClick={handleLikeClick}
+      >
+        {isLiked ? <FavoriteIcon fontSize="large" /> : <FavoriteBorderIcon fontSize="large" />}
+      </IconButton>
+      <Typography variant="body2" fontWeight={600}>
+        {post?.likes.length || 0}
+      </Typography>
+    </Box>
 
       {/* Avatar + Follow */}
       <Box
@@ -37,7 +71,7 @@ export default function SideBar({
         alignItems="center"
       >
         <Avatar
-          src="https://i.pinimg.com/originals/1a/fb/2a/1afb2a8d7efb8e8e42025e33878d6a2a.jpg"
+          src={post?.user.avatar}
           sx={{
             width: 48,
             height: 48,
@@ -73,7 +107,7 @@ export default function SideBar({
           <ChatBubbleOutlineIcon fontSize="large" />
         </IconButton>
         <Typography variant="body2" fontWeight={600}>
-          0
+          {post?.comments.length || 0}
         </Typography>
       </Box>
     </Stack>

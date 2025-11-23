@@ -11,30 +11,32 @@ import FavoriteBorderIcon from "@mui/icons-material/FavoriteBorder";
 import ChatBubbleOutlineIcon from "@mui/icons-material/ChatBubbleOutline";
 
 interface PostCardProps {
-  image: string;
+  image?: string;
   title: string;
-  description: string;
-  author: string;
+  quote: string;
+  author: any;
   time: string;
-  readTime: string;
   likes: number;
   comments: number;
+  tags?: string[];
   layout?: "row" | "column";
+  onClick?: () => void;
 }
 
 export default function PostCard({
-  image,
+  image = "/meme.jpg",
   title,
-  description,
+  quote,
   author,
   time,
-  readTime,
   likes,
   comments,
+  tags = [],
   layout = "row",
+  onClick
 }: PostCardProps) {
   return (
-    <Tooltip title={title} arrow>
+    <Tooltip title={title} arrow onClick={onClick}>
       <Card
         sx={{
           display: "flex",
@@ -44,7 +46,8 @@ export default function PostCard({
           borderRadius: 2,
           overflow: "hidden",
           boxShadow: 1,
-          bgcolor: "	#212121",
+          bgcolor: "#212121",
+          maxHeight: layout === "column" ? "320px" : "180px",
         "&:hover": {
           bgcolor: "#535353",
           cursor: "pointer",
@@ -58,6 +61,8 @@ export default function PostCard({
         sx={{
           width: layout === "column" ? "100%" : { xs: "100%", md: 280 },
           height: layout === "column" ? 160 : { xs: 180, md: "100%" },
+          maxWidth: "280px",
+          maxHeight: "180px",
           objectFit: "cover",
           flexShrink: 0,
         }}
@@ -74,7 +79,7 @@ export default function PostCard({
         }}
       >
         <Typography variant="caption" sx={{ mb: 0.5 }}>
-          KHOA HỌC - CÔNG NGHỆ • {readTime}
+          {tags.join(" • ")}
         </Typography>
 
         
@@ -84,36 +89,43 @@ export default function PostCard({
             fontWeight: 600,
             mb: 1,
             lineHeight: 1.3,
+            height: layout === "column" ? "3em" : "auto",
             display: "-webkit-box",
             WebkitBoxOrient: "vertical",
             WebkitLineClamp: 2,
             overflow: "hidden",
+            textOverflow: "ellipsis",
           }}
         >
           {title}
         </Typography>
 
-        <Typography
-          variant="body2"
-          sx={{
-            display: "-webkit-box",
-            WebkitBoxOrient: "vertical",
-            WebkitLineClamp: 2,
-            overflow: "hidden",
-            mb: 1,
-          }}
-        >
-          {description}
-        </Typography>
+        { layout === "row" && (
+          <Typography
+            variant="body2"
+            sx={{
+              display: "-webkit-box",
+              WebkitBoxOrient: "vertical",
+              WebkitLineClamp: 2,
+              overflow: "hidden",
+              mb: 1,
+              textOverflow: "ellipsis",
+            }}
+          >
+            {quote}
+          </Typography>
+        )}
 
         <Stack direction="row" alignItems="center" justifyContent="space-between">
           <Stack direction="row" alignItems="center" spacing={1}>
-            <Avatar src="/avatar.jpg" sx={{ width: 24, height: 24 }} />
+            <Avatar src={author.avatar} sx={{ width: 24, height: 24 }} />
             <Typography variant="body2" fontWeight={500}>
-              {author}
+              {author.name}
             </Typography>
             <Typography variant="body2">
-              • {time}
+              • {time
+                  ? new Date(time).toLocaleDateString("vi-VN")
+                  : "--/--/----"}
             </Typography>
           </Stack>
 

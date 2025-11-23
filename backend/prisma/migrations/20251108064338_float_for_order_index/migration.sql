@@ -1,0 +1,2 @@
+-- AlterTable
+ALTER TABLE "block" ALTER COLUMN "order_index" SET DATA TYPE DOUBLE PRECISION;

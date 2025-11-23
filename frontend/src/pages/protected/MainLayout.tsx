@@ -1,63 +1,38 @@
 import { Grid } from "@mui/material";
 import TopicSidebar from "../../components/home/TopicSidebar";
-import { useContext, useEffect, useState } from "react";
-import { HomeContent } from "./ProtectedLayout";
+import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
+import { useSelector } from "react-redux";
+import { useSearchParams } from "react-router-dom";
 
-export default function MainLayout({
-  children,
-  showSidebar: propShowSidebar,
-}: {
-  children: React.ReactNode;
-  showSidebar?: boolean;
-}) {
-  const context = useContext(HomeContent);
-  const showSidebar = propShowSidebar ?? context?.showSidebar ?? true;
+export default function MainLayout({ children }: { children: React.ReactNode }) {
+  const [searchParams, setSearchParams] = useSearchParams();
 
-  // ✅ Chỉ animate sau lần render đầu tiên
-  const [hasMounted, setHasMounted] = useState(false);
+  // ✅ Tự động thêm ?page=1 nếu chưa có
   useEffect(() => {
-    setHasMounted(true);
-  }, []);
+    if (!searchParams.get("page") && location.pathname === "/home") {
+      setSearchParams({ page: "1" });
+    }
+  }, [searchParams, setSearchParams]);
+
+
+  const { openFilterModal } = useSelector((state: any) => state.service);
+  const [hasMounted, setHasMounted] = useState(false);
+  useEffect(() => setHasMounted(true), []);
 
   return (
-    <Grid
-      container
-      spacing={1}
-      sx={{
-        bgcolor: "black",
-        height: "100%",
-        overflow: "hidden",
-      }}
-    >
+    <Grid container spacing={1} sx={{ bgcolor: "black", height: "100%", overflow: "hidden" }}>
       {/* Sidebar */}
-      <Grid
-        sx={{
-          height: "100%",
-          display: "flex",
-          flexDirection: "column",
-          overflow: "hidden",
-          transition: "all 0.3s ease",
-        }}
-      >
+      <Grid sx={{ height: "100%", display: "flex", flexDirection: "column", overflow: "hidden", transition: "all 0.3s ease" }}>
         <motion.div
-          initial={false} // 🔹 Không dùng giá trị mặc định (tránh giật)
+          initial={false}
           animate={
             hasMounted
-              ? {
-                  width: showSidebar ? 100 : 0,
-                  opacity: showSidebar ? 1 : 0,
-                }
-              : {
-                  width: showSidebar ? 100 : 0, // 🔹 Giữ nguyên trạng thái ban đầu, không animate
-                  opacity: showSidebar ? 1 : 0,
-                }
+              ? { width: openFilterModal ? 100 : 0, opacity: openFilterModal ? 1 : 0 }
+              : { width: openFilterModal ? 100 : 0, opacity: openFilterModal ? 1 : 0 }
           }
           transition={{ duration: hasMounted ? 0.4 : 0, ease: "easeInOut" }}
-          style={{
-            overflow: "hidden",
-            height: "100%",
-          }}
+          style={{ overflow: "hidden", height: "100%" }}
         >
           <TopicSidebar />
         </motion.div>

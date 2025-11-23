@@ -1,4 +1,4 @@
-import { Box, CardMedia, Stack, Typography } from "@mui/material";
+import { Box, Stack, Typography } from "@mui/material";
 import TabsSearch from "./TabsSearch";
 import { useSearchParams } from "react-router-dom";
 
