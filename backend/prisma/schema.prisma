@@ -49,11 +49,17 @@ enum TextAlign {
   justify
 }
 
+enum UserRole {
+  user
+  admin
+}
+
 model User {
   user_id        Int      @id @default(autoincrement())
   email     String   @unique
   password  String
   name      String?
+  role      UserRole   @default(user)
   avatar    String?
   bio       String?
   gender    GenderType?

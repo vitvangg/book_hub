@@ -1,6 +1,7 @@
-import { createApi, fetchBaseQuery, setupListeners} from "@reduxjs/toolkit/query/react";
+import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 import {  addMyInfo, setUserInfo, addTag, addListComments } from "./slice";
 import type { CreateDraftResponse } from "../config/constants.ts";
+import { combineReducers } from "@reduxjs/toolkit";
 
 export const serviceApi = createApi({
     reducerPath: "serviceApi",
@@ -8,7 +9,7 @@ export const serviceApi = createApi({
         credentials: "include" // Gửi kèm cookie 
     }),
     keepUnusedDataFor: 60 * 60 * 24, // Lưu cache trong 24 giờ
-    tagTypes: ['User', 'Post', 'Me', 'Block', 'Tag', 'Comment'], // Định nghĩa các loại tag
+    tagTypes: ['User', 'Post', 'Me', 'Block', 'Tag', 'Comment', 'Feedback'], // Định nghĩa các loại tag
     endpoints: (builder) => ({
         signup: builder.mutation({
             query: (data) => ({
@@ -119,6 +120,44 @@ export const serviceApi = createApi({
                     console.error("Fetch tags failed", error);
                 }
             },
+        }),
+        createTag: builder.mutation({
+            query: (data) => ({
+                url: `/create-tag`,
+                method: "POST",
+                body: data
+            }),
+            invalidatesTags: [{ type: 'Tag', id: "LIST" }],
+        }),
+        deleteTag: builder.mutation({
+            query: (tagID) => ({
+                url: `/delete-tag/${tagID}`,
+                method: "DELETE",
+            }),
+            invalidatesTags: [{ type: 'Tag', id: "LIST" }],
+        }),
+
+        listUser: builder.query<any, { page: number }>({
+            query: ({ page }) => ({
+                url: `/list-users?page=${page}`,
+                method: "GET",
+            }),
+            providesTags: (result, error, args) => {
+                return result?.data
+                    ? [
+                        ...result.data.users.map(({ user_id }: { user_id: number }) => ({ type: 'User' as const, id: user_id })),
+                        { type: 'User', id: "LIST" },
+                    ]
+                    : [{ type: 'User', id: "LIST" }];
+            },
+        }),
+
+        deleteUser: builder.mutation({
+            query: (userID) => ({
+                url: `/delete-account/${userID}`,
+                method: "DELETE",
+            }),
+            invalidatesTags: [{ type: 'User', id: 'LIST' }],
         }),
 
         // Tạo post mới
@@ -454,6 +493,63 @@ export const serviceApi = createApi({
                     : [{ type: 'User', id: "LIST" }];
             },
         }),
+
+        // Feedback
+        createFeedback: builder.mutation({
+            query: (data) => ({
+                url: `/feedback`,
+                method: "POST",
+                body: data
+            }),
+            invalidatesTags: ['Feedback'],
+        }),
+
+        listFeedback: builder.query<any, { page: number }>({
+            query: ({ page }) => ({
+                url: `/feedbacks?page=${page}`,
+                method: "GET",
+            }),
+            providesTags: (result, error, args) => {
+                return result
+                    ? [
+                        ...result.data.feedbacks.map(({ feedback_id }: { feedback_id: number }) => ({ type: 'Feedback' as const, id: feedback_id })),
+                        { type: 'Feedback', id: "LIST" },
+                    ]
+                    : [{ type: 'Feedback', id: "LIST" }];
+            },
+        }),
+
+        overview: builder.query<any, void>({
+            query: () => ({
+                url: `/overview`,
+                method: "GET",
+            }),
+        }),
+
+        post24h: builder.query<any, void>({
+            query: () => ({
+                url: `/posts/new-24h`,
+                method: "GET",
+            }),
+            providesTags: [{ type: 'Post', id: 'LIST' }],
+        }),
+
+        user24h: builder.query<any, void>({
+            query: () => ({
+                url: `/users/new-24h`,
+                method: "GET",
+            }),
+            providesTags: [{ type: 'User', id: 'LIST' }],
+        }),
+
+
+        comment24h: builder.query<any, void>({
+            query: () => ({
+                url: `/comments/new-24h`,
+                method: "GET",
+            }),
+            providesTags: [{ type: 'Comment', id: 'LIST' }],
+        })   
     }),
 });
 export const { useSignupMutation, useLoginMutation, useGetMyInfoQuery, useLogoutMutation, useGetUserDetailQuery, 
@@ -484,5 +580,11 @@ export const { useSignupMutation, useLoginMutation, useGetMyInfoQuery, useLogout
     useListLatestPostsByTagQuery,
     useListHotPostsByTagQuery,
     useListPostBySearchQuery,
-    useListUserBySearchQuery
+    useListUserBySearchQuery,
+    useCreateFeedbackMutation,
+    useListUserQuery,
+    useDeleteUserMutation,
+    useCreateTagMutation, useDeleteTagMutation,
+    useListFeedbackQuery,
+    useOverviewQuery, usePost24hQuery, useUser24hQuery, useComment24hQuery
  } = serviceApi;

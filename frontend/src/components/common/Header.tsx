@@ -1,25 +1,21 @@
-import { Stack, Box, Dialog } from "@mui/material";
+import { Stack, Box } from "@mui/material";
 import { GoHomeFill } from "react-icons/go";
 import Search from "./Search";
-import Navbar from "./LogSignButton";
+import LogSignButton from "./LogSignButton";
 import Feature from "./Feature";
 import { useNavigate, useLocation } from "react-router-dom";
-import { useEffect, useState } from "react";
-import { useContext } from "react";
+import { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { addFilterModal, addMyInfo } from "../../redux/slice";
-import { useGetMyInfoQuery } from "../../redux/service";
+import { addFilterModal} from "../../redux/slice";
 
 function Header() {
-  const { data } = useGetMyInfoQuery();
-
   const navigate = useNavigate();
   const location = useLocation();
   const dispatch = useDispatch();
-
+  const { isAdmin } = useSelector((state: any) => state.service);
   const { openFilterModal } = useSelector((state: any) => state.service);
   const handleSidebarToggle = () => {
-    if (location.pathname === "/create" || location.pathname === `/user/${myInfo?.user_id}`) {
+    if (location.pathname === "/create" || location.pathname === `/user/${myInfo?.user_id}` || location.pathname === "/admin") {
       return; // Không làm gì nếu đang ở trang /create hoặc /user
     }
     dispatch(addFilterModal(!openFilterModal));
@@ -30,8 +26,7 @@ function Header() {
   }
 
   const { myInfo } = useSelector((state: any) => state.service);
-
-
+  console.log("My Info in Header:", myInfo);
   useEffect(() => {
     if (location.pathname === "/create" || location.pathname === `/user/${myInfo?.user_id}`) {
       dispatch(addFilterModal(false));
@@ -58,7 +53,9 @@ function Header() {
                 style={{ width: 48, height: 48 }}
               />
             </Box>
-            <Box
+            {!isAdmin && (
+              <>
+              <Box
               sx={{
                 borderRadius: "100%",
                 bgcolor: "#282828",
@@ -96,11 +93,14 @@ function Header() {
             </Box>
 
             <Search />
+              </>
+            )}
+
           </Stack>
         {/* Center - Search */}
         {/* Right - Auth */}
         <Stack>
-          {myInfo ? <Feature /> : <Navbar />}
+          {myInfo ? <Feature /> : <LogSignButton />}
         </Stack>
       </Stack>
     </header>

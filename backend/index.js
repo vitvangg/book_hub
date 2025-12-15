@@ -2,6 +2,7 @@ import express from 'express';
 import dotenv from 'dotenv';
 import userRouter from './routers/user.route.js';
 import postRouter from './routers/post.route.js';
+import adminRouter from './routers/admin.route.js';
 import commentRouter from './routers/comment.route.js';
 import cookieParser from 'cookie-parser';
 import cors from 'cors';
@@ -19,6 +20,7 @@ app.use(cors({
 app.use("/api", userRouter);
 app.use("/api", postRouter);
 app.use("/api", commentRouter);
+app.use("/api", adminRouter);
 
 
 

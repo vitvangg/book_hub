@@ -3,10 +3,10 @@ import FavoriteBorderIcon from "@mui/icons-material/FavoriteBorder";
 import ChatBubbleOutlineIcon from "@mui/icons-material/ChatBubbleOutline";
 import PersonAddAltIcon from "@mui/icons-material/PersonAddAlt";
 import { useSelector } from "react-redux";
-import { useParams } from "react-router-dom";
 import {  useLikePostMutation } from "../../redux/service";
 import { useEffect, useState } from "react";
 import FavoriteIcon from "@mui/icons-material/Favorite";
+import { toast } from "react-toastify";
 
 export default function SideBar({
   post,
@@ -33,6 +33,7 @@ export default function SideBar({
       }
     } catch (error) {
       console.error("Failed to like post:", error);
+      toast.error("Failed to like post");
     }
   };
 

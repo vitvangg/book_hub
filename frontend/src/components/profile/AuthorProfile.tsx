@@ -2,6 +2,7 @@ import { Box, Avatar, Typography, Button, Stack } from "@mui/material";
 import ChatBubbleOutlineIcon from "@mui/icons-material/ChatBubbleOutline";
 import { useNavigate, useParams } from "react-router-dom";
 import { useCheckFollowQuery, useFollowUserMutation } from "../../redux/service";
+import { useSelector } from "react-redux";
 
 interface AuthorProfileProps {
   email: string;
@@ -25,8 +26,8 @@ export default function AuthorProfile({
   // ✅ State lưu trạng thái follow
   const navigate = useNavigate();
   const { userID } = useParams();
-  console.log("userID:", userID);
   const { data, refetch } = useCheckFollowQuery(Number(userID));
+  const { isAdmin } = useSelector((state: any) => state.service);
 
   const [follow, followData] = useFollowUserMutation();
   if (followData.isLoading) return <div>Loading...</div>;
@@ -70,7 +71,7 @@ export default function AuthorProfile({
       </Typography>
 
       {/* Nút hành động */}
-      {isCurrentUser ? (
+      {(isCurrentUser && !isAdmin) ? (
         <Button
           variant="outlined"
           onClick={() => {
@@ -85,7 +86,7 @@ export default function AuthorProfile({
         >
           Edit Profile
         </Button>
-      ) : (
+      ) : (!isAdmin) ? (
         <Stack direction="row" spacing={2} mb={2}>
           <Button
             variant={data?.data.isFollowing ? "outlined" : "contained"}
@@ -115,7 +116,7 @@ export default function AuthorProfile({
             Message
           </Button>
         </Stack>
-      )}
+      ) : null}
 
       {/* Thống kê */}
       <Stack direction="row" spacing={4}>

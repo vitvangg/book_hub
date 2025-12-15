@@ -5,6 +5,7 @@ const serviceSlice = createSlice({
   initialState: { openAddPostModal: false,
     openFilterModal: true,
     myInfo: null,
+    isAdmin: false,
     userInfo: null,
     totalPages: 0,
     listTag: [] as { tag_id: number; name: string }[],
@@ -39,8 +40,11 @@ const serviceSlice = createSlice({
     setCurrentTag: (state, action) => {
       state.currentTag = action.payload;
     },
+    setIsAdmin: (state, action) => {
+      state.isAdmin = action.payload;
+    },
   },
 });
 
-export const { addPostModal, addFilterModal, addMyInfo, clearMyInfo, setUserInfo, addTag, addListComments, setCurrentTag } = serviceSlice.actions
+export const { addPostModal, addFilterModal, addMyInfo, clearMyInfo, setUserInfo, addTag, addListComments, setCurrentTag, setIsAdmin } = serviceSlice.actions
 export default serviceSlice.reducer;

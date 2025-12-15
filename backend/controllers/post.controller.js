@@ -111,7 +111,7 @@ export async function deletePost(req, res) {
         if (!post) {
             return res.status(404).json({ message: "Post not found" });
         }
-        if (post.user_id !== userID) {
+        if (post.user_id !== userID && req.user.role !== 'admin') {
             return res.status(403).json({ message: "Unauthorized to delete this post" });
         }
         await prisma.post.delete({
@@ -460,53 +460,78 @@ export async function listBlockByPost(req, res) {
 }
 // search posts by user name
 export async function searchPost(req, res) {
-    try {
-        const { q, page } = req.query;
-        const limit = 10;
-        const page_int = parseInt(req.query.page, 10) || 1;
-        const offset = (page_int - 1) * limit;
-        const pattern = q.trim();
+  try {
+    const { q, page } = req.query;
+    const limit = 10;
+    const page_int = parseInt(page, 10) || 1;
+    const offset = (page_int - 1) * limit;
+    const pattern = q.trim();
 
-        const posts = await prisma.$queryRaw`
-            SELECT u.name, u.avatar, p.title, p.quote, p."createdAt", CAST(COUNT(l.user_id) AS INTEGER) AS like_count, CAST(COUNT(C.comment_id) AS INTEGER) AS comment_count
-            FROM "post" p
-            JOIN "user" u ON p.user_id = u.user_id
-            LEFT JOIN "like" l ON p.post_id = l.post_id
-            LEFT JOIN "comment" c ON p.post_id = c.post_id
-            WHERE p.status = 'published' AND c.parent_id IS NULL AND p.title ILIKE ${'%' + pattern + '%'}
-            GROUP BY p.post_id, u.user_id
-            ORDER BY 
-            CASE
-                WHEN p.title ILIKE ${pattern} THEN 1
-                WHEN p.title ILIKE ${pattern + '%'} THEN 2
-                WHEN p.title ILIKE ${'%' + pattern + '%'} THEN 3
-                ELSE 4
-            END,
-            p."createdAt" DESC
-        `;
-        const formatted = posts.map((p) => ({
-          post_id: p.post_id,
-          title: p.title,
-          quote: p.quote,
-          createdAt: p.createdAt,
-          like_count: p.like_count,
-          comment_count: p.comment_count,
-          user: {
-            user_id: p.user_id,
-            name: p.name,
-            avatar: p.avatar
-          }
-        }));
-              // Pagination
-      const pagedPosts = formatted.slice(offset, offset + limit);
-      const totalPages = Math.ceil(formatted.length / limit);
+    const posts = await prisma.$queryRaw`
+      SELECT p.post_id, u.user_id, u.name, u.avatar, p.title, p.quote, p."createdAt",
+      CAST(COUNT(l.user_id) AS INTEGER) AS like_count,
+      CAST(COUNT(c.comment_id) AS INTEGER) AS comment_count
+      FROM "post" p
+      JOIN "user" u ON p.user_id = u.user_id
+      LEFT JOIN "like" l ON p.post_id = l.post_id
+      LEFT JOIN "comment" c ON p.post_id = c.post_id
+      WHERE p.status = 'published' AND c.parent_id IS NULL AND p.title ILIKE ${'%' + pattern + '%'}
+      GROUP BY p.post_id, u.user_id
+      ORDER BY 
+        CASE
+          WHEN p.title ILIKE ${pattern} THEN 1
+          WHEN p.title ILIKE ${pattern + '%'} THEN 2
+          WHEN p.title ILIKE ${'%' + pattern + '%'} THEN 3
+          ELSE 4
+        END,
+        p."createdAt" DESC
+    `;
 
-        res.status(200).json({ success: true, message: "Search posts fetched successfully", data: pagedPosts, totalPages });
-    } catch (error) {
-        console.error("Error search posts: ", error);
-        res.status(500).json({ success: false, message: "Internal server error" });
-    }
+    const formatted = posts.map((p) => ({
+      post_id: p.post_id,
+      title: p.title,
+      quote: p.quote,
+      createdAt: p.createdAt,
+      like_count: p.like_count,
+      comment_count: p.comment_count,
+      user: {
+        user_id: p.user_id,
+        name: p.name,
+        avatar: p.avatar,
+      },
+    }));
+
+    // resolve block image
+    const fullformat = await Promise.all(
+      formatted.map(async (post) => {
+        const block = await prisma.block.findFirst({
+          where: { post_id: post.post_id, type: "image" },
+          orderBy: { order_index: 'asc' }
+        });
+
+        return {
+          ...post,
+          image_url: block?.content?.image ?? null,
+        };
+      })
+    );
+
+    // Pagination
+    const pagedPosts = fullformat.slice(offset, offset + limit);
+    const totalPages = Math.ceil(formatted.length / limit);
+
+    res.status(200).json({
+      success: true,
+      message: "Search posts fetched successfully",
+      data: pagedPosts,
+      totalPages,
+    });
+  } catch (error) {
+    console.error("Error search posts: ", error);
+    res.status(500).json({ success: false, message: "Internal server error" });
+  }
 }
+
 
 
 // list published posts with pagination
@@ -553,19 +578,30 @@ export async function listPostsByUser(req, res) {
             skip: offset,   
             take: limit,
         });
-        const formattedPosts = posts.map(post => {
-            const { post_tags, ...rest } = post;
-            return {
-                ...rest,
-                tags: post_tags.map(pt => pt.tag.name),
-            };
+    const formattedPosts = await Promise.all(
+      posts.map(async (post) => {
+        const block = await prisma.block.findFirst({
+          where: {
+            post_id: post.post_id,
+            type: "image",
+          },
+          orderBy: { order_index: "asc" },
         });
 
-        res.status(200).json( { posts: formattedPosts , totalPages });
-    } catch (error) {
-        console.error(error);
-        res.status(500).json({ message: "Internal server error" });
-    }  
+        const first_image = block?.content?.image ?? null;
+
+        return {
+          ...post,
+          tags: post.post_tags.map((pt) => pt.tag.name),
+          image_url: first_image,
+        };
+      })
+    );
+    res.status(200).json({ posts: formattedPosts, totalPages });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Internal server error" });
+  }
 }
 
 // like or unlike a post
@@ -578,6 +614,9 @@ export async function likePost(req, res) {
         });
         if (userID === post.user_id) {
             return res.status(400).json({ message: "Cannot like your own post" });
+        }
+        if (req.user.role === 'admin') {
+            return res.status(403).json({ message: "Admins cannot like posts" });
         }
         const existingLike = await prisma.like.findUnique({
             where: {
@@ -622,6 +661,9 @@ export async function createTag(req, res) {
         if (existingTag) {
             return res.status(400).json({ message: "Tag already exists" });
         }
+        if (req.user.role !== 'admin') {
+            return res.status(403).json({ message: "Forbidden" });
+        }
         const newTag = await prisma.tag.create({
             data: { name },
         });
@@ -629,6 +671,22 @@ export async function createTag(req, res) {
     } catch (error) {
         res.status(500).json({ message: "Internal server error" });
     }
+}
+// delete a tag
+export async function deleteTag(req, res) {
+  try {
+      const { tagID } = req.params;
+      if (req.user.role !== 'admin') {
+          return res.status(403).json({ message: "Forbidden" });
+      }
+      await prisma.tag.delete({
+          where: { tag_id: Number(tagID) },
+      });
+      res.status(200).json({ message: "Tag deleted successfully" });
+  } catch (error) {
+      console.error(error);
+      res.status(500).json({ message: "Internal server error" });
+  }
 }
 
 // list all tags
@@ -645,6 +703,9 @@ export async function listTags(req, res) {
 export async function addTagToPost(req, res) {
     try {
         const { postID, tagID } = req.body;
+        if (req.user.role !== 'admin') {
+            return res.status(403).json({ message: "Forbidden" });
+        }
         const newPostTag = await prisma.postTag.create({
             data: {
                 post_id: Number(postID),  
@@ -713,15 +774,27 @@ export async function listLatestPosts(req, res) {
           skip: offset,   
           take: limit,
       });
-      const formattedPosts = posts.map(post => {
-          const { post_tags, ...rest } = post;
-          return {
-              ...rest,
-              tags: post_tags.map(pt => pt.tag.name),
-          };
-      });
+    const formattedPosts = await Promise.all(
+      posts.map(async (post) => {
+        const block = await prisma.block.findFirst({
+          where: {
+            post_id: post.post_id,
+            type: "image",
+          },
+          orderBy: { order_index: "asc" },
+        });
 
-      res.status(200).json( { posts: formattedPosts , totalPages });
+        const first_image = block?.content?.image ?? null;
+
+        return {
+          ...post,
+          tags: post.post_tags.map((pt) => pt.tag.name),
+          image_url: first_image,
+        };
+      })
+    );
+
+      res.status(200).json({ posts: formattedPosts, totalPages });
   } catch (error) {
       console.error(error);
       res.status(500).json({ message: "Internal server error" });
@@ -770,15 +843,27 @@ export async function listTopRatedPosts(req, res) {
           skip: offset,
           take: limit,
       });
-      const formattedPosts = posts.map(post => {
-          const { post_tags, ...rest } = post;
-          return {
-              ...rest,
-              tags: post_tags.map(pt => pt.tag.name),
-          };
-      });
+    const formattedPosts = await Promise.all(
+      posts.map(async (post) => {
+        const block = await prisma.block.findFirst({
+          where: {
+            post_id: post.post_id,
+            type: "image",
+          },
+          orderBy: { order_index: "asc" },
+        });
 
-      res.status(200).json( { posts: formattedPosts , totalPages });
+        const first_image = block?.content?.image ?? null;
+
+        return {
+          ...post,
+          tags: post.post_tags.map((pt) => pt.tag.name),
+          image_url: first_image,
+        };
+      })
+    );
+
+      res.status(200).json({ posts: formattedPosts, totalPages });
   } catch (error) {
       console.error(error);
       res.status(500).json({ message: "Internal server error" });
@@ -840,15 +925,27 @@ export async function listPostsByFollowing(req, res) {
           skip: offset,
           take: limit,
       });
-      const formattedPosts = posts.map(post => {
-          const { post_tags, ...rest } = post;
-          return {
-              ...rest,
-              tags: post_tags.map(pt => pt.tag.name),
-          };
-      });
+    const formattedPosts = await Promise.all(
+      posts.map(async (post) => {
+        const block = await prisma.block.findFirst({
+          where: {
+            post_id: post.post_id,
+            type: "image",
+          },
+          orderBy: { order_index: "asc" },
+        });
 
-      res.status(200).json( { posts: formattedPosts , totalPages });
+        const first_image = block?.content?.image ?? null;
+
+        return {
+          ...post,
+          tags: post.post_tags.map((pt) => pt.tag.name),
+          image_url: first_image,
+        };
+      })
+    );
+
+      res.status(200).json({ posts: formattedPosts, totalPages });
   } catch (error) {
       console.error(error);
       res.status(500).json({ message: "Internal server error" });
@@ -907,15 +1004,27 @@ export async function listPostsHot(req, res) {
 
     // Pagination
     const pagedPosts = postsWithScore.slice(offset, offset + limit);
-    const formattedPosts = pagedPosts.map(post => {
-        const { post_tags, ...rest } = post;
-        return {
-            ...rest,
-            tags: post_tags.map(pt => pt.tag.name),
-        };
-    });
+    const formattedPosts = await Promise.all(
+      pagedPosts.map(async (post) => {
+        const block = await prisma.block.findFirst({
+          where: {
+            post_id: post.post_id,
+            type: "image",
+          },
+          orderBy: { order_index: "asc" },
+        });
 
-      res.status(200).json( { posts: formattedPosts , totalPages });
+        const first_image = block?.content?.image ?? null;
+
+        return {
+          ...post,
+          tags: post.post_tags.map((pt) => pt.tag.name),
+          image_url: first_image,
+        };
+      })
+    );
+
+      res.status(200).json({ posts: formattedPosts, totalPages });
   } catch (error) {
       console.error(error);
       res.status(500).json({ message: "Internal server error" });
@@ -970,15 +1079,27 @@ export async function listTrending30(req, res) {
 
     // Pagination
     const pagedPosts = postsWithScore.slice(offset, offset + limit);
-    const formattedPosts = pagedPosts.map(post => {
-        const { post_tags, ...rest } = post;
-        return {
-            ...rest,
-            tags: post_tags.map(pt => pt.tag.name),
-        };
-    });
+    const formattedPosts = await Promise.all(
+      pagedPosts.map(async (post) => {
+        const block = await prisma.block.findFirst({
+          where: {
+            post_id: post.post_id,
+            type: "image",
+          },
+          orderBy: { order_index: "asc" },
+        });
 
-      res.status(200).json( { posts: formattedPosts });
+        const first_image = block?.content?.image ?? null;
+
+        return {
+          ...post,
+          tags: post.post_tags.map((pt) => pt.tag.name),
+          image_url: first_image,
+        };
+      })
+    );
+
+      res.status(200).json({ posts: formattedPosts });
   } catch (error) {
       console.error(error);
       res.status(500).json({ message: "Internal server error" });
@@ -1025,15 +1146,27 @@ export async function listLatestPostsByTag(req, res) {
           skip: offset,   
           take: limit,
       });
-      const formattedPosts = posts.map(post => {
-          const { post_tags, ...rest } = post;
-          return {
-              ...rest,
-              tags: post_tags.map(pt => pt.tag.name),
-          };
-      });
+    const formattedPosts = await Promise.all(
+      posts.map(async (post) => {
+        const block = await prisma.block.findFirst({
+          where: {
+            post_id: post.post_id,
+            type: "image",
+          },
+          orderBy: { order_index: "asc" },
+        });
 
-      res.status(200).json( { posts: formattedPosts , totalPages });
+        const first_image = block?.content?.image ?? null;
+
+        return {
+          ...post,
+          tags: post.post_tags.map((pt) => pt.tag.name),
+          image_url: first_image,
+        };
+      })
+    );
+
+      res.status(200).json({ posts: formattedPosts, totalPages });
   } catch (error) {
       console.error(error);
       res.status(500).json({ message: "Internal server error" });
@@ -1093,15 +1226,27 @@ export async function listPostsHotByTag(req, res) {
 
     // Pagination
     const pagedPosts = postsWithScore.slice(offset, offset + limit);
-    const formattedPosts = pagedPosts.map(post => {
-        const { post_tags, ...rest } = post;
-        return {
-            ...rest,
-            tags: post_tags.map(pt => pt.tag.name),
-        };
-    });
+    const formattedPosts = await Promise.all(
+      pagedPosts.map(async (post) => {
+        const block = await prisma.block.findFirst({
+          where: {
+            post_id: post.post_id,
+            type: "image",
+          },
+          orderBy: { order_index: "asc" },
+        });
 
-      res.status(200).json( { posts: formattedPosts , totalPages });
+        const first_image = block?.content?.image ?? null;
+
+        return {
+          ...post,
+          tags: post.post_tags.map((pt) => pt.tag.name),
+          image_url: first_image,
+        };
+      })
+    );
+
+      res.status(200).json({ posts: formattedPosts, totalPages });
   } catch (error) {
       console.error(error);
       res.status(500).json({ message: "Internal server error" });
@@ -1153,15 +1298,27 @@ export async function listPostsTopRatedByTag(req, res) {
 
       // Pagination
       const pagedPosts = posts.slice(offset, offset + limit);
-      const formattedPosts = pagedPosts.map(post => {
-          const { post_tags, ...rest } = post;
-          return {
-              ...rest,
-              tags: post_tags.map(pt => pt.tag.name),
-          };
-      });
+    const formattedPosts = await Promise.all(
+      pagedPosts.map(async (post) => {
+        const block = await prisma.block.findFirst({
+          where: {
+            post_id: post.post_id,
+            type: "image",
+          },
+          orderBy: { order_index: "asc" },
+        });
 
-      res.status(200).json( { posts: formattedPosts , totalPages });
+        const first_image = block?.content?.image ?? null;
+
+        return {
+          ...post,
+          tags: post.post_tags.map((pt) => pt.tag.name),
+          image_url: first_image,
+        };
+      })
+    );
+
+      res.status(200).json({ posts: formattedPosts, totalPages });
   } catch (error) {
       console.error(error);
       res.status(500).json({ message: "Internal server error" });

@@ -1,4 +1,4 @@
-import { use, useEffect, useRef } from "react";
+import { useEffect, useRef } from "react";
 import PostCard from "../common/PostCard";
 import { Stack, Typography, Box, IconButton } from "@mui/material";
 import { ChevronLeft, ChevronRight } from "@mui/icons-material";
@@ -16,7 +16,7 @@ function TrendingContent() {
     }
   };
 
-  const { data: trendingPosts, isLoading, isError } = useListTrending30Query();
+  const { data: trendingPosts, isError } = useListTrending30Query();
   const currentPosts = trendingPosts?.posts || [];
 
   const handlePostClick = (postID: number) => {
@@ -70,6 +70,7 @@ function TrendingContent() {
         {currentPosts.map((post: any, index: number) => (
           <Box key={index} sx={{ flex: "0 0 auto", scrollSnapAlign: "start"}}>
             <PostCard
+              image={post.image_url || "/meme.jpg"}
               title={post.title}
               quote={post.quote}
               author={post.user}

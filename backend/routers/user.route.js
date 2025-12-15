@@ -12,9 +12,9 @@ router.get('/me', auth, getMyInfo);
 router.put('/update-profile',auth, updateUserProfile);
 router.get('/user/:userID', auth, getUser);
 router.post('/follow/:userFollowedID', auth, followUser);
-router.get('/list-users', listUsers);
-router.delete('/delete-account/:userID', deleteUser);
-router.get('/search-users', searchUsers);
+router.get('/list-users', auth, listUsers);
+router.delete('/delete-account/:userID', auth, deleteUser);
+router.get('/search-users', auth, searchUsers);
 router.get('/check-follow/:userFollowedID', auth, checkFollow);
 
 // feedback routes

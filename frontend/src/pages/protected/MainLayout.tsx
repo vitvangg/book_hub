@@ -4,13 +4,17 @@ import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { useSelector } from "react-redux";
 import { useSearchParams } from "react-router-dom";
+import AdminSidebar from "../../components/admin/AdminSidebar";
 
 export default function MainLayout({ children }: { children: React.ReactNode }) {
   const [searchParams, setSearchParams] = useSearchParams();
+  const { isAdmin } = useSelector((state: any) => state.service);
 
   // ✅ Tự động thêm ?page=1 nếu chưa có
   useEffect(() => {
-    if (!searchParams.get("page") && location.pathname === "/home") {
+    if (!searchParams.get("page") && (location.pathname === "/home" || location.pathname === "/admin"
+    || location.pathname === "/admin/users" || location.pathname === "/admin/reports"
+    )) {
       setSearchParams({ page: "1" });
     }
   }, [searchParams, setSearchParams]);
@@ -28,13 +32,13 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
           initial={false}
           animate={
             hasMounted
-              ? { width: openFilterModal ? 100 : 0, opacity: openFilterModal ? 1 : 0 }
-              : { width: openFilterModal ? 100 : 0, opacity: openFilterModal ? 1 : 0 }
+              ? { width: openFilterModal ? (isAdmin ? 140 : 100) : 0, opacity: openFilterModal ? 1 : 0 }
+              : { width: openFilterModal ? (isAdmin ? 140 : 100) : 0, opacity: openFilterModal ? 1 : 0 }
           }
           transition={{ duration: hasMounted ? 0.4 : 0, ease: "easeInOut" }}
           style={{ overflow: "hidden", height: "100%" }}
         >
-          <TopicSidebar />
+          {isAdmin ? <AdminSidebar /> : <TopicSidebar />}
         </motion.div>
       </Grid>
 

@@ -5,7 +5,10 @@ export const createComment = async (req, res) => {
   try {
     const { postID, content } = req.body;
     const userID = req.user.user_id;
-
+    
+    if (req.user.role === 'admin') {
+      return res.status(403).json({ error: "Admins cannot create comments" });
+    }
     const newComment = await prisma.comment.create({
       data: {
         post_id: Number(postID),
@@ -35,7 +38,7 @@ export const deleteComment = async (req, res) => {
       return res.status(404).json({ error: "Comment not found" });
     }
 
-    if (comment.user_id !== userID) {
+    if (comment.user_id !== userID && req.user.role !== 'admin') {
       return res.status(403).json({ error: "You are not authorized to delete this comment" });
     }
 

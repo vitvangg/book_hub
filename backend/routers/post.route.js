@@ -9,9 +9,8 @@ import {
   listPostsByUser, 
   likePost, 
   createTag, 
-  listTags, 
-  addTagToPost, 
-  removeTagFromPost,
+  listTags,
+  deleteTag,
   publishPost,
   createBlock,
   updateBlock,
@@ -55,6 +54,7 @@ router.delete('/delete-list-block/:postID', auth, deleteBlocksByPost);
 
 // === TAG MANAGEMENT ===
 router.post('/create-tag', auth, createTag);
+router.delete('/delete-tag/:tagID', auth, deleteTag)
 router.get('/list-tags', listTags);
 
 // === HOMEPAGE ===

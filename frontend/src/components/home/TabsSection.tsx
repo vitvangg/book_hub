@@ -119,6 +119,7 @@ export default function TabsSection() {
           {currentPosts.map((post: any, index: number) => (
             <PostCard
                 key={index}
+                image={post.image_url || "/meme.jpg"}
                 title={post.title}
                 quote={post.quote}
                 author={post.user}

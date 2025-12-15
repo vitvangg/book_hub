@@ -106,16 +106,17 @@ export default function TabsSearch() {
             <>
               {currentPosts.map((post: any, index: number) => (
                 <PostCard
-                key={index}
-                title={post.title}
-                quote={post.quote}
-                author={post.user}
-                time={post.createdAt}
-                likes={post.like_count}
-                comments={post.comment_count}
-                tags={post.tags}
-                layout="row"
-                onClick={() => handlePostClick(post.post_id)} 
+                  key={index}
+                  image={post.image_url || "/meme.jpg"}
+                  title={post.title}
+                  quote={post.quote}
+                  author={post.user}
+                  time={post.createdAt}
+                  likes={post.like_count}
+                  comments={post.comment_count}
+                  tags={post.tags}
+                  layout="row"
+                  onClick={() => handlePostClick(post.post_id)}
             />
           ))}
 

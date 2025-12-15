@@ -14,11 +14,15 @@ export default function CreateText() {
     const { myInfo } = useSelector((state: any) => state.service);
 
     const handleCreateComment = async () => {
-        const data = {
-            postID: String(postID),
-            content: text,
+        try {
+            const data = {
+                postID: String(postID),
+                content: text,
+            }
+            await createComment(data).unwrap();
+        } catch (error) {
+            toast.error("Failed to create comment");
         }
-        await createComment(data).unwrap();
     };
 
     const handleEnter = async (e: React.KeyboardEvent<HTMLInputElement | HTMLTextAreaElement>) => {

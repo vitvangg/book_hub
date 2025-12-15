@@ -8,10 +8,11 @@ import { useLoginMutation } from "../redux/service";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import { useDispatch } from "react-redux";
+import { setIsAdmin } from "../redux/slice";
 
 
 function Login() {
-
     const [loginUser] = useLoginMutation();
 
     const [email, setEmail] = useState("");
@@ -19,6 +20,8 @@ function Login() {
     const [errors, setErrors] = useState({ email: "", password: "" });
 
     const navigate = useNavigate();
+    const dispatch = useDispatch();
+
     const validateForm = () => {
         const newErrors = { email: "", password: "" };
         let isValid = true;
@@ -46,9 +49,16 @@ function Login() {
         try {
             await loginUser(data).unwrap(); // ✅ dùng unwrap
             toast.success("Login successful!");
-            setTimeout(() => {
-              navigate("/home");
-            }, 500);
+            if (data.email === "admin@gmail.com") {
+                setTimeout(() => {
+                    dispatch(setIsAdmin(true));
+                    navigate("/admin/dashboard");
+                }, 500);
+            } else {
+                setTimeout(() => {
+                    navigate("/home");
+                }, 500);
+            }
 
         } catch (error) {
             toast.error("Login failed. Please check your credentials.");

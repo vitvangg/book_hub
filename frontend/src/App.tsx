@@ -14,17 +14,79 @@ import CreatePost from "./components/modals/CreatePost";
 import EditProfile from "./components/profile/EditProfile";
 import UpdatePost from "./components/post/UpdatePost";
 import { ToastContainer } from "react-toastify";
-
-
+import { FeedbackPage } from "./components/feedback/Feedback";
+import { useGetMyInfoQuery } from "./redux/service";
+import { useEffect } from "react";
+import { addFilterModal, setIsAdmin } from "./redux/slice";
+import { useDispatch } from "react-redux";
+import DashboardPage from "./pages/admin/Dashboard";
+import UserList from "./pages/admin/UserList";
+import PostList from "./pages/admin/PostList";
+import { TagList } from "./pages/admin/TagList";
+import FeedBackList from "./pages/admin/FeedBackList";
 
 function App() {
-  
+  const { data: myInfo, refetch } = useGetMyInfoQuery();
+  const dispatch = useDispatch();
+
+  useEffect(() => {
+    if (myInfo?.email === "admin@gmail.com") {
+      dispatch(setIsAdmin(true));
+      dispatch(addFilterModal(true));
+    }
+    refetch();
+  }, [myInfo]);
+
   return (
     <BrowserRouter>
       <Routes>
         {/* Public routes */}
         <Route path="/login" element={<Login />} />
         <Route path="/sign-up" element={<Register />} />
+
+        {/* Admin routes */}
+        <Route element={<ProtectedLayout />}>
+          <Route
+            path="/admin/dashboard"
+            element={
+              <MainLayout>
+                <DashboardPage />
+              </MainLayout>
+            }
+          />
+          <Route
+            path="/admin/users"
+            element={
+              <MainLayout>
+                <UserList />
+              </MainLayout>
+            }
+          />
+          <Route
+            path="/admin/posts"
+            element={
+              <MainLayout>
+                <PostList />
+              </MainLayout>
+            }
+          />
+          <Route
+            path="/admin/tags"
+            element={
+              <MainLayout>
+                <TagList />
+              </MainLayout>
+            }
+          />
+          <Route 
+            path="/admin/reports"
+            element={
+              <MainLayout>
+                <FeedBackList />
+              </MainLayout>
+            }
+          />
+        </Route>
 
         {/* Protected routes */}
         <Route element={<ProtectedLayout />}>
@@ -92,11 +154,20 @@ function App() {
               </MainLayout>
             }
           />
+          <Route
+            path="/feedback"
+            element={
+              <MainLayout>
+                <FeedbackPage />
+              </MainLayout>
+            }
+          />
           <Route path="/loading" element={<Loading />} />
+          <Route path="/" element={<MainLayout><Content /></MainLayout>} />
           <Route path="/*" element={<Error />} />
         </Route>
       </Routes>
-            {/* Container đặt ở cuối cùng */}
+      {/* Container đặt ở cuối cùng */}
       <ToastContainer position="top-right" autoClose={3000} />
     </BrowserRouter>
   );

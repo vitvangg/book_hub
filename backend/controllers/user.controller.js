@@ -18,7 +18,7 @@ export async function signUp(req, res) {
 
     const newUser = await prisma.user.create({
       data: { name, email, password: hashedPassword },
-      select: { user_id: true, name: true, email: true },
+      select: { user_id: true, name: true, email: true, role: true },
     });
 
     // Generate JWT token
@@ -167,6 +167,7 @@ export async function getUser(req, res) {
         email: true,
         avatar: true,
         bio: true,
+        role: true,
         gender: true
       },
     });
@@ -288,19 +289,25 @@ export async function updateUserProfile(req, res) {
 
 export async function listUsers(req, res) {
   try {
-    console.log("Query params:", req.query);
-    const page  = parseInt(req.query.page, 10) || 1;
+    const page = parseInt(req.query.page, 10) || 1;
+    const totalUsers = await prisma.user.count({
+      where: { role: { not: 'admin' } }
+    });
+
     const users = await prisma.user.findMany({
+      where: { role: { not: 'admin' } },
       orderBy: { createdAt: 'desc' },
-      skip: (page - 1)  * 20,
-      take: 20,
+      skip: (page - 1)  * 10,
+      take: 10,
       select: {
+        user_id: true,
         name: true,
         email: true,
         avatar: true
       }
     })
-    res.status(200).json({ success: true, message: "List users fetched successfully", data: users });
+    const formatUser = { users, totalPages: Math.ceil(totalUsers / 10) }
+    res.status(200).json({ success: true, message: "List users fetched successfully", data: formatUser });
   } catch (error) {
     console.error("Error list users: ", error);
     res.status(500).json({ success: false, message: "Internal server error" });
@@ -309,19 +316,21 @@ export async function listUsers(req, res) {
 
 export async function deleteUser(req, res) {
   try {
-    const { userID } = req.params;
-    const userIdNum = parseInt(userID, 10);
-    if (isNaN(userIdNum)) {
-      return res.status(400).json({ success: false, message: "Invalid user ID" });
+    const user = req.user;
+    if (user.role !== 'admin') {
+      return res.status(400).json({ success: false, message: "Only admin can delete user !" });
     }
-    const user = await prisma.user.findUnique({
-      where: { user_id: userIdNum },
+    const { userID } = req.params;
+
+    const userToDelete = await prisma.user.findUnique({
+      where: { user_id: Number(userID) },
     });
-    if (!user) {
+
+    if (!userToDelete) {
       return res.status(404).json({ success: false, message: "User not found" });
     }
     await prisma.user.delete({
-      where: { user_id: userIdNum },
+      where: { user_id: userToDelete.user_id },
     });
     res.status(200).json({ success: true, message: "User deleted successfully" });
   } catch (error) {
@@ -417,7 +426,11 @@ export const submitFeedback = async (req, res) => {
 
 export const listFeedbacks = async (req, res) => {
   try {
+    const page = Number(req.query.page) || 1;
+    const totalPage = await prisma.feedback.count();
     const feedbacks = await prisma.feedback.findMany({
+      skip: (page - 1) * 10,
+      take: 10,
       select: {
         feedback_id: true,
         message: true,
@@ -432,11 +445,11 @@ export const listFeedbacks = async (req, res) => {
       },
       orderBy: { createdAt: 'desc' },
     });
-
+    const formatFeedbacks = { feedbacks, totalPages: Math.ceil(totalPage / 10) };
     res.status(200).json({
       success: true,
       message: "Feedbacks fetched successfully",
-      data: feedbacks,
+      data: formatFeedbacks,
     });
   } catch (error) {
     console.error("Error fetching feedbacks: ", error);

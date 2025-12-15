@@ -3,14 +3,14 @@ import { Box,
         Typography, 
         TextField, 
         Button } from "@mui/material";
-import { use, useEffect, useState } from "react";
+import {  useState } from "react";
 import { useSignupMutation } from "../redux/service";
-import { data, useNavigate } from "react-router-dom";
+import {  useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 
 function Register() {
 
-    const [signUpUser, signUpUserData] = useSignupMutation();
+    const [signUpUser] = useSignupMutation();
 
     const [email, setEmail] = useState("");
     const [username, setUsername] = useState("");

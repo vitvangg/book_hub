@@ -1,7 +1,7 @@
 import { Box, Button } from "@mui/material";
 import { useNavigate } from "react-router-dom";
 
-function Navbar() {
+function LogSignButton() {
   const navigate = useNavigate();
   function handleLoginClick() {
     navigate("/login");
@@ -69,4 +69,4 @@ function Navbar() {
   );
 }
 
-export default Navbar;
+export default LogSignButton;

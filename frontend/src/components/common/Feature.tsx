@@ -16,15 +16,21 @@ import NotificationsIcon from "@mui/icons-material/Notifications";
 import { useNavigate } from "react-router-dom";
 import { useCreateDraftPostMutation, useLogoutMutation } from "../../redux/service";
 import { useDispatch, useSelector } from "react-redux";
-import { clearMyInfo } from "../../redux/slice";
+import { clearMyInfo, setIsAdmin } from "../../redux/slice";
 import { toast } from "react-toastify";
 
 export default function Feature() {
   const [anchorElUser, setAnchorElUser] = useState<HTMLElement | null>(null);
-  const settings = ["Trang cá nhân", "Đăng xuất"];
+  let settings = null
   const navigate = useNavigate();
 
   const { myInfo } = useSelector((state: any) => state.service);
+  const { isAdmin } = useSelector((state: any) => state.service);
+  if (!isAdmin) {
+    settings = ["Trang cá nhân", "Đăng xuất"];
+  } else {
+    settings = ["Đăng xuất"];
+  }
   console.log("myInfo in Feature:", myInfo);
   const [logout] = useLogoutMutation();
   const dispatch = useDispatch();
@@ -48,6 +54,7 @@ export default function Feature() {
     try {
       await logout(null as any).unwrap();
       dispatch(clearMyInfo());
+      dispatch(setIsAdmin(false));
       navigate("/home");
       handleCloseUserMenu();
       toast.success("Logout successful!");
@@ -64,6 +71,9 @@ export default function Feature() {
       toast.error("Failed to create new post");
     }
   }
+  const handleClickFeedback = async () => {
+      navigate(`/feedback`);
+  }
   return (
     <Stack
       direction="row"
@@ -75,72 +85,92 @@ export default function Feature() {
         borderRadius: 2,
       }}
     >
-      {/* Tin nhắn */}
-      <IconButton
-        sx={{
-          transition: "all 0.2s ease",
-          "& svg": {
-            color: "rgba(255,255,255,0.5)",
-            transition: "all 0.2s ease",
-          },
-          "&:hover svg": { color: "white", transform: "scale(1.03)" },
-          "&:active svg": { transform: "scale(0.95)" },
-        }}
-      >
-        <Badge
-          badgeContent={2}
+      {!isAdmin && (
+      <>
+        {/* Tin nhắn */}
+        <IconButton
           sx={{
-            "& .MuiBadge-badge": {
-              backgroundColor: "#1db954", // giữ màu xanh cố định
-              color: "white",
+            transition: "all 0.2s ease",
+            "& svg": {
+              color: "rgba(255,255,255,0.5)",
+              transition: "all 0.2s ease",
             },
+            "&:hover svg": { color: "white", transform: "scale(1.03)" },
+            "&:active svg": { transform: "scale(0.95)" },
           }}
         >
-          <MailIcon />
-        </Badge>
-      </IconButton>
+          <Badge
+            badgeContent={2}
+            sx={{
+              "& .MuiBadge-badge": {
+                backgroundColor: "#1db954", // giữ màu xanh cố định
+                color: "white",
+              },
+            }}
+          >
+            <MailIcon />
+          </Badge>
+        </IconButton>
 
-      {/* Thông báo */}
-      <IconButton
-        sx={{
-          transition: "all 0.2s ease",
-          "& svg": {
-            color: "rgba(255,255,255,0.5)",
-            transition: "all 0.2s ease",
-          },
-          "&:hover svg": { color: "white", transform: "scale(1.03)" },
-          "&:active svg": { transform: "scale(0.95)" },
-        }}
-      >
-        <Badge
-          badgeContent={5}
+        {/* Thông báo */}
+        <IconButton
           sx={{
-            "& .MuiBadge-badge": {
-              backgroundColor: "#1db954", // luôn màu xanh
-              color: "white",
+            transition: "all 0.2s ease",
+            "& svg": {
+              color: "rgba(255,255,255,0.5)",
+              transition: "all 0.2s ease",
             },
+            "&:hover svg": { color: "white", transform: "scale(1.03)" },
+            "&:active svg": { transform: "scale(0.95)" },
           }}
         >
-          <NotificationsIcon />
-        </Badge>
-      </IconButton>
+          <Badge
+            badgeContent={5}
+            sx={{
+              "& .MuiBadge-badge": {
+                backgroundColor: "#1db954", // luôn màu xanh
+                color: "white",
+              },
+            }}
+          >
+            <NotificationsIcon />
+          </Badge>
+        </IconButton>
 
-      {/* Viết bài */}
-      <Button
-        disableRipple
-        sx={{
-          color: "#535353",
-          textTransform: "none",
-          fontSize: "16px",
-          fontWeight: "bold",
-          transition: "all 0.2s ease",
-          "&:hover": { color: "white", transform: "scale(1.03)" },
-          "&:active": { transform: "scale(0.95)" },
-        }}
-        onClick={handleClickNewPost}
-      >
-        New post
-      </Button>
+        {/* Feedback */}
+        <Button
+          disableRipple
+          sx={{
+            color: "#535353",
+            textTransform: "none",
+            fontSize: "16px",
+            fontWeight: "bold",
+            transition: "all 0.2s ease",
+            "&:hover": { color: "white", transform: "scale(1.03)" },
+            "&:active": { transform: "scale(0.95)" },
+          }}
+          onClick={handleClickFeedback}
+        >
+          Feedback
+        </Button>
+        {/* Viết bài */}
+        <Button
+          disableRipple
+          sx={{
+            color: "#535353",
+            textTransform: "none",
+            fontSize: "16px",
+            fontWeight: "bold",
+            transition: "all 0.2s ease",
+            "&:hover": { color: "white", transform: "scale(1.03)" },
+            "&:active": { transform: "scale(0.95)" },
+          }}
+          onClick={handleClickNewPost}
+        >
+          New post
+        </Button>
+      </>
+    )}
 
       {/* Avatar */}
       <Box>
@@ -199,4 +229,5 @@ export default function Feature() {
     </Stack>
   );
 }
+
 

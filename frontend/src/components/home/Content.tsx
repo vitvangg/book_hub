@@ -1,6 +1,7 @@
 import { Box, CardMedia, Stack } from "@mui/material";
 import TrendingContent from "./TrendingContent";  // phần bài viết nổi bật
 import TabsSection from "./TabsSection";  // phần tabs: Dành cho bạn, Mới nhất,...
+import Footer from "../common/Footer";
 
 export default function Content() {
 
@@ -51,6 +52,7 @@ export default function Content() {
             />
           </Box>
         </Stack>
+        <Footer />
       </Box>
     </Box>
   );

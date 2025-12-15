@@ -29,6 +29,7 @@ export default function PostPage() {
   const commentRef = useRef<HTMLDivElement | null>(null);
   const { myInfo } = useSelector((state: any) => state.service);
   const { data, isError, isLoading } = useGetPostDetailQuery(String(postID));
+  const { isAdmin } = useSelector((state: any) => state.service);
 
   const [isAuthor, setIsAuthor] = useState(false);
   const navigate = useNavigate();
@@ -40,7 +41,7 @@ export default function PostPage() {
     try {
       await deletePost(String(postID)).unwrap();
       toast.success("Post deleted successfully");
-      navigate("/user/" + myInfo.user_id);
+      navigate(-1);
     } catch (error) {
       toast.error("Failed to delete post");
     }
@@ -206,9 +207,9 @@ export default function PostPage() {
                   </Typography>
                 </Box>
               </Stack>
-              { isAuthor && (
+              { (isAuthor || isAdmin) && (
                 <Box>
-                  <Button color="primary" onClick={handleUpdateClick}>Update</Button>
+                  {!isAdmin && <Button color="primary" onClick={handleUpdateClick}>Update</Button>}
                   <Button color="error" onClick={() => setOpenDelete(true)}>Delete</Button>
 
                   <DeletePost
