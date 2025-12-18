@@ -33,7 +33,7 @@ export async function signUp(req, res) {
       maxAge: 1000 * 60 * 60 * 24 * 7, // 7 days
       httpOnly: true,
       sameSite: "lax",
-      secure: false,
+      secure: true,
     });
     res.status(201).json({
       success: true,
@@ -77,7 +77,7 @@ export async function logIn(req, res) {
       maxAge: 1000 * 60 * 60 * 24 * 7, // 7 days
       httpOnly: true,
       sameSite: "lax",
-      secure: false,
+      secure: true,
     });
 
     res.status(200).json({ success: true, message: "Login successful", token: accessToken });
@@ -91,7 +91,7 @@ export async function logOut(req, res) {
         res.cookie('token', '', {
             maxAge: 0,
             httpOnly: true,
-            sameSite: "none",
+            sameSite: "lax",
             secure: true
         })
         res.status(200).json({ success: true, message: "You are logged out!" })
